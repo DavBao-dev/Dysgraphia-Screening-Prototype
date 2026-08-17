@@ -25,7 +25,7 @@ parkinson_prototype/
   image_features.py        # Trich 2 feature thu cong cho Model B (do day muc, lech dong)
   inference.py             # Load + chay Model B: ResNet50 backbone + MLP head (weight that)
   db.py                    # SQLite: luu feature + ket qua
-  weights/model_b_classifier.pt   # Weight MLP head cua ban (dat san trong nay)
+  weights/model_b.pt   # Weight MLP head cua ban (dat san trong nay)
   requirements.txt
 ```
 
@@ -78,7 +78,7 @@ lai qua trinh viet, khong phai anh chup ket qua chu viet.
 
 ## Test da chay (khong chi la code ly thuyet)
 
-- Load weight that `model_b_classifier.pt` vao dung kien truc: **thanh cong,
+- Load weight that `model_b.pt` vao dung kien truc: **thanh cong,
   khong loi**.
 - Chay full pipeline Model B (anh gia -> embedding -> concat -> MLP head ->
   sigmoid): **thanh cong**.

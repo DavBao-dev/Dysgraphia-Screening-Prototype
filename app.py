@@ -34,7 +34,7 @@ st.caption(
 
 st.sidebar.header("Duong dan file weight")
 path_model_a = st.sidebar.text_input("Model A - classifier (.joblib)", value="weights/writesense_model_a.joblib")
-path_model_b_head = st.sidebar.text_input("Model B - MLP head weight (.pt)", value="weights/model_b_classifier.pt")
+path_model_b_head = st.sidebar.text_input("Model B - MLP head weight (.pt)", value="weights/model_b.pt")
 st.sidebar.caption(
     "Model A: Random Forest (.joblib) tren 18 feature co ban. Model B: MLP head (.pt)."
 )

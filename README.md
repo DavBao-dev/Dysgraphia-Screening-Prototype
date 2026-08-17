@@ -1,4 +1,4 @@
-# Dysgraphia Screening Prototype (Streamlit + SQLite)
+# Dysgraphia Screening Prototype (Streamlit + MySQL)
 
 ## Cai dat & chay
 

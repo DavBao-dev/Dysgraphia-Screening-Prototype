@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.js"></script>
+<style>
+  .wrap { text-align: center; font-family: -apple-system, "Segoe UI", sans-serif; }
+  video { position: absolute; left: -9999px; top: 0; }
+  canvas { width: 100%; max-width: 640px; border-radius: 8px; background: #000; }
+  button { padding: 8px 18px; margin: 6px 4px; cursor: pointer; border-radius: 6px; border: 1px solid #999; background: #f4f4f4; }
+  #status { font-size: 14px; color: #555; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <video id="video" playsinline muted></video>
+  <canvas id="canvas" width="640" height="480"></canvas>
+  <div>
+    <button id="startBtn">Start</button>
+    <button id="stopBtn" disabled>Stop</button>
+  </div>
+  <div id="status">Nhan Start de mo camera.</div>
+</div>
+
+<script>
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const startBtn = document.getElementById('startBtn');
+const stopBtn = document.getElementById('stopBtn');
+const statusEl = document.getElementById('status');
+
+let hands = null;
+let buffer = [];
+let timestamps = [];
+let running = false;
+let rafId = null;
+let hasResults = false;
+
+const locateFile = (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/${file}`;
+
+function onResults(results) {
+  hasResults = true;
+  ctx.save();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+  if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+    const landmarks = results.multiHandLandmarks[0];
+    drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {color: '#00FF00', lineWidth: 3});
+    drawLandmarks(ctx, landmarks, {color: '#FF0000', lineWidth: 1.5});
+    buffer.push(landmarks.map(lm => [lm.x, lm.y, lm.z]));
+    timestamps.push(performance.now());
+    statusEl.textContent = 'Da thu: ' + buffer.length + ' frame co ban tay';
+  } else {
+    statusEl.textContent = 'Camera hoat dong, chua thay ban tay...';
+  }
+  ctx.restore();
+}
+
+function computeFps() {
+  if (timestamps.length >= 2) {
+    const intervals = [];
+    for (let i = 1; i < timestamps.length; i++) intervals.push(timestamps[i] - timestamps[i - 1]);
+    intervals.sort((a, b) => a - b);
+    const median = intervals[Math.floor(intervals.length / 2)];
+    if (median > 0) return Math.round(1000 / median);
+  }
+  return 30;
+}
+
+async function loop() {
+  if (!running) return;
+  try {
+    // Ve truc tiep frame tu camera cho den khi MediaPipe cho ket qua dau tien
+    if (!hasResults && video.readyState >= 2) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    }
+    if (hands && video.readyState >= 2) {
+      await hands.send({image: video});
+    }
+  } catch (e) { /* ignore */ }
+  if (running) rafId = requestAnimationFrame(loop);
+}
+
+function postToStreamlit(type, data) {
+  const msg = { isStreamlitMessage: true, type: type };
+  if (data !== undefined) Object.assign(msg, data);
+  window.parent.postMessage(msg, '*');
+}
+
+// Bao cho Streamlit biet component da san sang (apiVersion bat buoc = 1) + set chieu cao iframe
+postToStreamlit('streamlit:componentReady', { apiVersion: 1 });
+postToStreamlit('streamlit:setFrameHeight', { height: 560 });
+
+async function start() {
+  buffer = [];
+  timestamps = [];
+  statusEl.textContent = 'Dang mo camera + load model...';
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({video: {width: 640, height: 480}, audio: false});
+    video.srcObject = stream;
+    await video.play();
+
+    hands = new Hands({locateFile: locateFile});
+    hands.setOptions({
+      maxNumHands: 1,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+    hands.onResults(onResults);
+
+    running = true;
+    loop();
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    statusEl.textContent = 'Dang track... Nhan Stop de gui ket qua.';
+  } catch (err) {
+    statusEl.textContent = 'Loi: ' + err.message;
+  }
+}
+
+function stop() {
+  running = false;
+  if (rafId) cancelAnimationFrame(rafId);
+  if (video.srcObject) {
+    video.srcObject.getTracks().forEach(t => t.stop());
+    video.srcObject = null;
+  }
+  if (hands) { try { hands.close(); } catch (e) {} hands = null; }
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+
+  const fps = computeFps();
+  statusEl.textContent = 'Da gui ' + buffer.length + ' frame (FPS ~' + fps + ').';
+  postToStreamlit('streamlit:setComponentValue', { value: { landmarks: buffer, fps: fps } });
+}
+
+startBtn.addEventListener('click', start);
+stopBtn.addEventListener('click', stop);
+</script>
+</body>
+</html>

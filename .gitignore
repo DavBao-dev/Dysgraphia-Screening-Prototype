@@ -61,3 +61,7 @@ Desktop.ini
 # weights/*.pth
 # weights/*.ckpt
 # weights/*.onnx
+
+# OpenVINO IR cache (generated from PyTorch weights on first run; large)
+weights/resnet50_openvino.xml
+weights/resnet50_openvino.bin

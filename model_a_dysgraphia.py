@@ -15,7 +15,7 @@ Dependencies
     opencv-python, mediapipe, numpy, scipy, pandas
 
 Usage
------
+-----   
     python model_a_dysgraphia.py                      # webcam (index 0)
     python model_a_dysgraphia.py --source video.mp4   # video file
 """
@@ -69,6 +69,105 @@ class Landmark(IntEnum):
     PINKY_TIP = 20
 
 
+# ---------------------------------------------------------------------------
+# Pre-processing helpers: temporal smoothing + movement gating
+# ---------------------------------------------------------------------------
+SMOOTHING_WINDOW: int = 3
+CONTRACTED_SMOOTHING_WINDOW: int = 5
+CONTRACTED_SPREAD_THRESHOLD: float = 0.15  # mean pairwise joint distance (normalized)
+NEAR_ZERO_SPEED_THRESHOLD: float = 0.005   # units/sec, for the pause-ratio guard
+MAX_SPEED_STATIONARY: float = 0.03         # max per-frame index-tip displacement
+STATIONARY_PATH_LENGTH: float = 0.12       # total index-tip path length (normalized)
+
+
+def smooth_keypoints(keypoints_3d: np.ndarray, window: int = SMOOTHING_WINDOW) -> np.ndarray:
+    """Apply a centered moving average along the time axis ``T``.
+
+    Smoothes MediaPipe pixel jitter across all 21 joints and (x, y, z) so that
+    numerical differentiation and FFT do not misread sensor noise as tremor.
+    """
+    arr = np.asarray(keypoints_3d, dtype=np.float64)
+    if arr.ndim != 3:
+        raise ValueError(f"Expected keypoints of shape (T, 21, 3), got {arr.shape}.")
+    T = arr.shape[0]
+    if T < 3 or window <= 1:
+        return arr.copy()
+
+    smoothed = np.empty_like(arr)
+    half = window // 2
+    for t in range(T):
+        lo = max(0, t - half)
+        hi = min(T, t + half + 1)
+        smoothed[t] = arr[lo:hi].mean(axis=0)
+    return smoothed
+
+
+def mean_joint_spread(keypoints_3d: np.ndarray) -> float:
+    """Mean pairwise distance between the 21 joints, averaged over frames.
+
+    Small for a contracted/clenched hand, larger for an open hand.
+    """
+    arr = np.asarray(keypoints_3d, dtype=np.float64)
+    iu = np.triu_indices(arr.shape[1], k=1)
+    spreads = []
+    for t in range(arr.shape[0]):
+        d = np.linalg.norm(arr[t][:, None, :] - arr[t][None, :, :], axis=-1)
+        spreads.append(float(d[iu].mean()))
+    return float(np.mean(spreads)) if spreads else 0.0
+
+
+def adaptive_smooth_keypoints(keypoints_3d: np.ndarray) -> np.ndarray:
+    """Smooth with a wider window when the hand is contracted (joints close).
+
+    A clenched/contracted hand has higher MediaPipe jitter (joints compressed /
+    occluded); a wider window (5 vs 3) flattens that jitter completely.
+    """
+    arr = np.asarray(keypoints_3d, dtype=np.float64)
+    window = (
+        CONTRACTED_SMOOTHING_WINDOW
+        if mean_joint_spread(arr) < CONTRACTED_SPREAD_THRESHOLD
+        else SMOOTHING_WINDOW
+    )
+    return smooth_keypoints(arr, window=window)
+
+
+def index_tip_speed(keypoints_3d: np.ndarray) -> np.ndarray:
+    """Per-frame displacement magnitude of the index fingertip (joint 8).
+
+    Shape ``(T-1,)`` in normalized coordinate units (NOT divided by dt).
+    """
+    tip = np.asarray(keypoints_3d, dtype=np.float64)[:, 8, :]
+    return np.linalg.norm(np.diff(tip, axis=0), axis=-1)
+
+
+def index_tip_path_length(keypoints_3d: np.ndarray) -> float:
+    """Total path length of the index fingertip (joint 8), normalized units.
+
+    ``sum_t || p8(t) - p8(t-1) ||`` -- near 0 for a stationary hand.
+    """
+    s = index_tip_speed(keypoints_3d)
+    return float(np.sum(s)) if s.size else 0.0
+
+
+def index_tip_speed_stats(keypoints_3d: np.ndarray) -> tuple[float, float, float]:
+    """Return ``(max_speed, std_speed, path_length)`` for the index fingertip."""
+    s = index_tip_speed(keypoints_3d)
+    if s.size == 0:
+        return 0.0, 0.0, 0.0
+    return float(np.max(s)), float(np.std(s)), float(np.sum(s))
+
+
+def is_stationary_motion(keypoints_3d: np.ndarray) -> bool:
+    """True when the hand has no real writing motion (only camera jitter).
+
+    Real handwriting has distinct speed peaks (accel/decel); static MediaPipe
+    jitter is uniform, low-amplitude noise. A low max speed plus a short path
+    length therefore means "not actively writing".
+    """
+    max_speed, _, path_length = index_tip_speed_stats(keypoints_3d)
+    return max_speed < MAX_SPEED_STATIONARY and path_length < STATIONARY_PATH_LENGTH
+
+
 class EnhancedKinematicFeatureExtractor:
     """
     Advanced Kinematic & Biomechanical Feature Extractor for Dysgraphia Screening.
@@ -81,6 +180,7 @@ class EnhancedKinematicFeatureExtractor:
         self.dt = 1.0 / self.fps
 
     def extract_features(self, keypoints_3d: np.ndarray) -> dict[str, float]:
+        keypoints_3d = adaptive_smooth_keypoints(keypoints_3d)  # de-noise (adaptive window)
         T = keypoints_3d.shape[0]
         if T < 15:
             raise ValueError(f"Sequence length T={T} is too short for reliable feature extraction.")
@@ -156,12 +256,16 @@ class EnhancedKinematicFeatureExtractor:
         wrist_drift_dist = np.linalg.norm(wrist[-1] - wrist[0])
         wrist_drift_rate = float(wrist_drift_dist / total_duration)
 
-        # In-Air Pause Ratio
-        pause_ratio = float(np.sum(speed < 0.005) / T)
+        # In-Air Pause Ratio (guard: whole-clip near-zero energy -> not a pause)
+        mean_speed = float(np.mean(speed))
+        if mean_speed < NEAR_ZERO_SPEED_THRESHOLD:
+            pause_ratio = 0.0
+        else:
+            pause_ratio = float(np.sum(speed < 0.005) / T)
 
         return {
             # Standard Metrics
-            "mean_speed": float(np.mean(speed)),
+            "mean_speed": mean_speed,
             "std_speed": float(np.std(speed)),
             "mean_jerk": float(np.mean(jerk)),
             "max_jerk": float(np.max(jerk)),
@@ -228,6 +332,7 @@ class KinematicFeatureExtractor:
         """
         landmarks = np.asarray(landmarks, dtype=np.float64)
         self._validate(landmarks)
+        landmarks = adaptive_smooth_keypoints(landmarks)  # de-noise (adaptive window)
 
         dt = self.dt
         tip = landmarks[:, Landmark.INDEX_TIP, :]  # (T, 3)
@@ -256,6 +361,16 @@ class KinematicFeatureExtractor:
         features["in_air_pause_ratio"] = self._pause_ratio(speed)
         features.update(self._tremor_fft(speed))
         features.update(self._pinch_distance(landmarks))
+
+        # Zero out postural (static) features when there is no active movement,
+        # so a still/contracted hand does not feed raw "cramped grip" posture
+        # values into the classifier.
+        if index_tip_speed_stats(landmarks)[0] < MAX_SPEED_STATIONARY:
+            features["wrist_flexion_angle_mean"] = 0.0
+            features["wrist_flexion_angle_std"] = 0.0
+            features["pinch_distance_mean"] = 0.0
+            features["pinch_distance_std"] = 0.0
+
         return features
 
     def extract_dataframe(self, landmarks: np.ndarray) -> pd.DataFrame:
@@ -304,7 +419,13 @@ class KinematicFeatureExtractor:
         }
 
     def _pause_ratio(self, speed: np.ndarray) -> float:
-        """Fraction of frames where the fingertip speed is below the rest threshold."""
+        """Fraction of frames where the fingertip speed is below the rest threshold.
+
+        Returns 0.0 (no pause) when the whole clip has near-zero kinetic energy,
+        so a fully stationary hand is not misread as "100% motor freezing".
+        """
+        if float(np.mean(speed)) < NEAR_ZERO_SPEED_THRESHOLD:
+            return 0.0
         paused = int(np.count_nonzero(speed < self.pause_threshold))
         return float(paused) / float(speed.size)
 

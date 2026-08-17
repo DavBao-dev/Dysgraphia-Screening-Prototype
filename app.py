@@ -27,7 +27,7 @@ st.caption(
 )
 
 st.sidebar.header("Duong dan file weight")
-path_model_b_head = st.sidebar.text_input("Model B - MLP head weight (.pt)", value="weights/model_b_resnet50.pt")
+path_model_b_head = st.sidebar.text_input("Model B - MLP head weight (.pt)", value="weights/model_b_classifier.pt")
 st.sidebar.caption(
     "Model A hien khong co file weight (chua co bo phan loai da train) - "
     "chi chay trich xuat feature. Xem model_a_adapter.py."

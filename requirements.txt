@@ -7,3 +7,4 @@ torch>=2.0
 torchvision>=0.15
 pillow>=10.0
 mediapipe==0.10.14
+scipy>=1.10.0

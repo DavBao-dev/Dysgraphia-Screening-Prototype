@@ -1,0 +1,63 @@
+# === Virtual environments ===
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# === Jupyter / IPython ===
+.ipynb_checkpoints/
+
+# === Environment & secrets ===
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# === Local databases (runtime data) ===
+*.db
+*.sqlite
+*.sqlite3
+
+# CSV data written at runtime by db.py
+data/
+
+# === IDE / editor ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === OS ===
+Thumbs.db
+.DS_Store
+Desktop.ini
+
+# === Trained model weights (large binaries) ===
+# Uncomment below if you want to keep weights out of git (e.g. use Git LFS or
+# a separate artifact store instead). Currently weights/model_b_resnet50.pt is
+# tracked in the repo, so leaving this commented avoids surprising changes.
+# weights/*.pt
+# weights/*.pth
+# weights/*.ckpt
+# weights/*.onnx

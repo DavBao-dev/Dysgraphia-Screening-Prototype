@@ -15,6 +15,7 @@ import db
 import inference
 import image_features
 import model_a_adapter
+import live_camera
 
 st.set_page_config(page_title="Dysgraphia/Parkinson Screening Prototype", layout="centered")
 db.init_db()
@@ -22,7 +23,7 @@ db.init_db()
 st.title("Dysgraphia Screening Prototype")
 st.caption(
     "Model A: video cu dong tay -> MediaPipe (Google) -> feature (chua co bo phan loai)  |  "
-    "Model B: anh chu viet -> ResNet50 + MLP head -> 0/1  |  Ket qua luu vao SQLite."
+    "Model B: anh chu viet -> ResNet50 + MLP head -> 0/1  |  Ket qua luu vao CSV (thu muc data/)."
 )
 
 st.sidebar.header("Duong dan file weight")
@@ -55,7 +56,7 @@ with col2:
     st.subheader("Model B - Anh chu viet tay")
     image_file = st.file_uploader("Upload anh chu viet", type=["png", "jpg", "jpeg"], key="img")
 
-run = st.button("Chay chan doan", type="primary", use_container_width=True)
+run = st.button("Chay chan doan", type="primary", width="stretch")
 
 if run:
     if not video_file or not image_file:
@@ -114,7 +115,7 @@ if run:
                 st.json(feat_b)
 
             st.caption(f"Session ID: {session_id} | Ensemble method: {method}")
-            st.caption("Da luu ket qua vao parkinson_data.db (SQLite).")
+            st.caption("Da luu ket qua vao cac file CSV (thu muc data/).")
 
         except FileNotFoundError as e:
             st.error(f"Khong tim thay file weight: {e}. Kiem tra duong dan trong sidebar.")
@@ -125,10 +126,131 @@ if run:
         except Exception as e:
             st.error(f"Loi khi xu ly: {e}")
 
+# =====================================================================
+# Model A - LIVE CAMERA (track tay truc tiep tu webcam ngay trong Streamlit)
+# =====================================================================
 st.divider()
-if st.checkbox("Xem lich su cac lan chan doan (doc tu SQLite)"):
+st.subheader("Model A - Live Camera (track tay truc tiep)")
+st.caption(
+    "Nhan **Start** de mo webcam va MediaPipe theo doi ban tay truc tiep ngay "
+    "trong Streamlit (khong can upload video). Nhan **Stop** de dung va tinh "
+    "feature (jerk / tremor / entropy...) tu chuoi keypoint vua thu duoc."
+)
+
+if "cam_running" not in st.session_state:
+    st.session_state.cam_running = False
+if "cam_cap" not in st.session_state:
+    st.session_state.cam_cap = None
+if "cam_trajectory" not in st.session_state:
+    st.session_state.cam_trajectory = []
+if "cam_fps" not in st.session_state:
+    st.session_state.cam_fps = 30.0
+if "cam_features" not in st.session_state:
+    st.session_state.cam_features = None
+
+
+@st.cache_resource(show_spinner="Dang khoi tao MediaPipe Hands...")
+def _get_hands():
+    return live_camera.make_hands()
+
+
+def _release_camera():
+    cap = st.session_state.get("cam_cap")
+    if cap is not None:
+        cap.release()
+    st.session_state.cam_cap = None
+
+
+col_start, col_stop = st.columns(2)
+with col_start:
+    if st.button(
+        "Start",
+        type="primary",
+        width="stretch",
+        disabled=st.session_state.cam_running,
+    ):
+        st.session_state.cam_running = True
+        st.session_state.cam_trajectory = []
+        st.session_state.cam_features = None
+        try:
+            st.session_state.cam_cap = live_camera.open_camera(0)
+            st.session_state.cam_fps = live_camera.get_camera_fps(st.session_state.cam_cap)
+        except Exception as e:
+            st.session_state.cam_running = False
+            st.error(f"Khong mo duoc camera: {e}")
+
+with col_stop:
+    if st.button(
+        "Stop",
+        type="secondary",
+        width="stretch",
+        disabled=not st.session_state.cam_running,
+    ):
+        st.session_state.cam_running = False
+        _release_camera()
+        traj = st.session_state.cam_trajectory
+        if len(traj) >= 15:
+            try:
+                st.session_state.cam_features = live_camera.extract_features_from_trajectory(
+                    traj, st.session_state.cam_fps
+                )
+            except Exception as e:
+                st.session_state.cam_features = None
+                st.error(f"Loi khi tinh feature: {e}")
+        else:
+            st.session_state.cam_features = None
+
+
+def _render_live_camera():
+    """Doc 1 frame tu webcam, ve landmark va hien thi len Streamlit.
+
+    Duoc auto-rerun dinh ky (Streamlit >= 1.37) de tao hieu ung video truc tiep.
+    """
+    if not st.session_state.cam_running:
+        return
+    cap = st.session_state.get("cam_cap")
+    if cap is None or not cap.isOpened():
+        return
+    ok, frame = cap.read()
+    if not ok:
+        st.session_state.cam_running = False
+        _release_camera()
+        return
+    annotated, landmarks = live_camera.process_frame(frame, _get_hands())
+    if landmarks is not None:
+        st.session_state.cam_trajectory.append(landmarks)
+    st.image(live_camera.resize_for_display(annotated), channels="BGR", width="stretch")
+    st.caption(f"Da thu duoc {len(st.session_state.cam_trajectory)} frame co ban tay.")
+
+
+# Wrap thanh fragment tu dong lam moi. CAM_REFRESH_SECONDS cang nho => FPS cang
+# cao. 1/30 ~ 30 FPS. Neu thay giat/lag thi tang len (vd 0.05 ~ 20 FPS).
+# Luu y: moi vong phai round-trip qua websocket + gui lai khung hinh, nen FPS
+# thuc te bi gioi han boi do tre mang/trinh duyet (thuong toi da 20-30 FPS).
+CAM_REFRESH_SECONDS = 1.0 / 30.0
+_frag = getattr(st, "fragment", None) or getattr(st, "experimental_fragment", None)
+if _frag is not None:
+    try:
+        _render_live_camera = _frag(run_every=CAM_REFRESH_SECONDS)(_render_live_camera)
+    except TypeError:
+        _render_live_camera = _frag()(_render_live_camera)
+
+_render_live_camera()
+
+if not st.session_state.cam_running:
+    if st.session_state.cam_features is not None:
+        st.markdown("**Feature vua trich xuat (Model A):**")
+        st.json(st.session_state.cam_features)
+    elif st.session_state.cam_trajectory:
+        st.info(
+            f"Da dung. Thu duoc {len(st.session_state.cam_trajectory)} frame co tay "
+            "(< 15 frame - chua du de tinh feature)."
+        )
+
+st.divider()
+if st.checkbox("Xem lich su cac lan chan doan (doc tu CSV)"):
     history = db.get_history()
     if history:
-        st.dataframe(pd.DataFrame(history), use_container_width=True)
+        st.dataframe(pd.DataFrame(history), width="stretch")
     else:
-        st.info("Chua co du lieu nao trong SQLite.")
+        st.info("Chua co du lieu nao trong CSV.")

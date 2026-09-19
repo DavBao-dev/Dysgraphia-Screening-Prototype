@@ -1,0 +1,90 @@
+=== [1/2] DANH GIA MODEL A (video that) ===
+  [cache] V001.mp4: risk=0.260
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+W0000 00:00:1787473719.770430   14844 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1787473719.787185   14936 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+C:\Users\tungl\Documents\AI_project\Project\Dygraphia\.venv\Lib\site-packages\google\protobuf\symbol_database.py:55: UserWarning: SymbolDatabase.GetPrototype() is deprecated. Please use message_factory.GetMessageClass() instead. SymbolDatabase.GetPrototype() will be removed soon.
+  warnings.warn('SymbolDatabase.GetPrototype() is deprecated. Please '
+  [CTRL] V002.mp4: risk=0.090 (frames=114)
+  [cache] V003_1.mp4: risk=0.250
+  [cache] V003_2.mp4: risk=0.010
+  [cache] V003_3.mp4: risk=0.310
+  [cache] V003_4.mp4: risk=0.250
+  [cache] V003_5.mp4: risk=0.250
+  [cache] V004.mp4: risk=0.590
+W0000 00:00:1787473727.824469   22932 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1787473727.843403   22932 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+C:\Users\tungl\Documents\AI_project\Project\Dygraphia\.venv\Lib\site-packages\google\protobuf\symbol_database.py:55: UserWarning: SymbolDatabase.GetPrototype() is deprecated. Please use message_factory.GetMessageClass() instead. SymbolDatabase.GetPrototype() will be removed soon.
+  warnings.warn('SymbolDatabase.GetPrototype() is deprecated. Please '
+  [CTRL] V005.mp4: risk=0.440 (frames=108)
+  [cache] V006.mp4: risk=0.580
+  [cache] V007.mp4: risk=0.610
+  [cache] V008.mp4: risk=0.010
+  [cache] V009.mp4: risk=0.340
+  [cache] dysgraphia_V001.mp4: risk=0.610
+W0000 00:00:1787473795.914684   15540 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1787473795.923373   15540 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+C:\Users\tungl\Documents\AI_project\Project\Dygraphia\.venv\Lib\site-packages\google\protobuf\symbol_database.py:55: UserWarning: SymbolDatabase.GetPrototype() is deprecated. Please use message_factory.GetMessageClass() instead. SymbolDatabase.GetPrototype() will be removed soon.
+  warnings.warn('SymbolDatabase.GetPrototype() is deprecated. Please '
+  [DYS] dysgraphia_V002.mp4: risk=0.590 (frames=93)
+W0000 00:00:1787473854.056999   22012 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1787473854.070337    9288 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+C:\Users\tungl\Documents\AI_project\Project\Dygraphia\.venv\Lib\site-packages\google\protobuf\symbol_database.py:55: UserWarning: SymbolDatabase.GetPrototype() is deprecated. Please use message_factory.GetMessageClass() instead. SymbolDatabase.GetPrototype() will be removed soon.
+  warnings.warn('SymbolDatabase.GetPrototype() is deprecated. Please '
+  [DYS] dysgraphia_V003.mp4: risk=0.350 (frames=70)
+  Mau: 16 (dysgraphic=3, control=13)
+  [CTRL] V001.mp4: risk=0.260
+  [CTRL] V002.mp4: risk=0.090
+  [CTRL] V003_1.mp4: risk=0.250
+  [CTRL] V003_2.mp4: risk=0.010
+  [CTRL] V003_3.mp4: risk=0.310
+  [CTRL] V003_4.mp4: risk=0.250
+  [CTRL] V003_5.mp4: risk=0.250
+  [CTRL] V004.mp4: risk=0.590
+  [CTRL] V005.mp4: risk=0.440
+  [CTRL] V006.mp4: risk=0.580
+  [CTRL] V007.mp4: risk=0.610
+  [CTRL] V008.mp4: risk=0.010
+  [CTRL] V009.mp4: risk=0.340
+  [DYS] dysgraphia_V001.mp4: risk=0.610
+  [DYS] dysgraphia_V002.mp4: risk=0.590
+  [DYS] dysgraphia_V003.mp4: risk=0.350
+
+=== [2/2] DANH GIA MODEL B (anh that) ===
+  Mau: 249 (dysgraphic=114, control=135)
+
+================= KET QUA (nguong mac dinh 0.5) =================
+--- Model A only (n=16) ---
+  Accuracy : 0.750
+  Precision: 0.400
+  Recall   : 0.667
+  F1       : 0.500
+  ROC-AUC  : 0.846
+  Confusion [TN FP; FN TP]: [[10, 3], [1, 2]]
+--- Model B only (n=249) ---
+  Accuracy : 0.711
+  Precision: 0.684
+  Recall   : 0.684
+  F1       : 0.684
+  ROC-AUC  : 0.825
+  Confusion [TN FP; FN TP]: [[99, 36], [36, 78]]
+
+=== FUSION (A+B) - ghep anh voi video CUNG LOP ===
+Low Potential Dysgraphia -> video KHONG co 'dysgraphia' (control)
+Potential Dysgraphia     -> video CO 'dysgraphia' trong ten (dysgraphic)
+  Mau ghep: 249 (dysgraphic=114, control=135)
+  [nguong 0.5] Accuracy=0.281 Precision=0.259 Recall=0.307 F1=0.281 AUC=0.870
+  Confusion [TN FP; FN TP]: [[35, 100], [79, 35]]
+
+=== TAI NGUONG TOI UU (Youden) ===
+  Nguong: A=0.350, B=0.999, Fusion=0.675
+Chi so               Model A         Model B          Fusion
+------------------------------------------------------------
+Accuracy               0.750           0.747           0.807
+Precision              0.429           0.768           0.884
+Recall                 1.000           0.640           0.667
+F1                     0.600           0.699           0.760
+ROC-AUC                0.846           0.825           0.870
+
+Da luu bieu do: evaluation_real_data.png

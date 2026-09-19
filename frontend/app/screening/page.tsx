@@ -141,7 +141,7 @@ export default function ScreeningPage() {
               <DetailsSection>
                 <ul className="list-disc space-y-1 pl-4">
                   <li>Một đoạn video ngắn (vài giây) với bàn tay trong khung hình là đủ.</li>
-                  <li>Cần ít nhất 15 khung hình có bàn tay để phân tích chuyển động.</li>
+                  <li>Cần ít nhất 5 khung hình có bàn tay để phân tích chuyển động.</li>
                   <li>Đảm bảo đủ ánh sáng và bàn tay nằm gọn trong khung hình.</li>
                   <li>Video chỉ dùng trong phiên hiện tại, không lưu lại hình ảnh gốc.</li>
                 </ul>

@@ -40,9 +40,9 @@ def extract_landmarks_from_video(video_path: str, max_num_hands: int = 1, prefer
     with mp_hands.Hands(
         static_image_mode=False,
         max_num_hands=max_num_hands,
-        model_complexity=1,
-        min_detection_confidence=0.5,
-        min_tracking_confidence=0.5,
+        model_complexity=0,
+        min_detection_confidence=0.4,
+        min_tracking_confidence=0.4,
     ) as hands:
         total_read = 0
         while True:

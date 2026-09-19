@@ -28,6 +28,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 
+from backend.config import MIN_MODEL_A_FRAMES
 from backend.ml.model_a_dysgraphia import (
     EnhancedKinematicFeatureExtractor,
     HandLandmarkRecorder,
@@ -453,8 +454,8 @@ def _predict_live(model_path: str, source: Union[int, str], fps_override: Option
     print("Recording -- press 'q' in the video window to stop and predict.")
     trajectory, fps = recorder.run()
 
-    if trajectory.shape[0] < 15:
-        print("Not enough frames with a detected hand (need >= 15).")
+    if trajectory.shape[0] < MIN_MODEL_A_FRAMES:
+        print(f"Not enough frames with a detected hand (need >= {MIN_MODEL_A_FRAMES}).")
         return 1
 
     effective_fps = fps_override if fps_override else fps

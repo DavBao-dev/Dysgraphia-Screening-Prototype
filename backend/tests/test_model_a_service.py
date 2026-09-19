@@ -4,6 +4,7 @@ import io
 import numpy as np
 import pytest
 
+from backend.config import MIN_MODEL_A_FRAMES
 from backend.services.model_a_service import VideoTooLargeError, run_model_a_landmarks, run_model_a_video
 
 
@@ -34,7 +35,7 @@ def test_model_a_landmarks_returns_valid_result():
 
 
 def test_model_a_too_few_frames_raises():
-    bad = [[[0.5] * 3] * 21] * 5
+    bad = [[[0.5] * 3] * 21] * (MIN_MODEL_A_FRAMES - 1)  # one frame below the minimum
     with pytest.raises(ValueError):
         run_model_a_landmarks(bad, fps=30.0)
 

@@ -13,7 +13,7 @@ interface VideoPanelProps {
   onRetake?: () => void;
 }
 
-const MIN_FRAMES = 15;
+const MIN_FRAMES = 5;
 
 export default function VideoPanel({
   mode,
@@ -56,7 +56,7 @@ export default function VideoPanel({
             <LiveCamera onResult={(data) => onLiveData(data)} onRetake={onRetake} />
             {frameCount > 0 && frameCount < MIN_FRAMES && (
               <p className="mt-3 text-sm text-amber">
-                Cần ít nhất 15 khung hình có bàn tay. Ghi thêm một chút nữa nhé.
+                Cần ít nhất 5 khung hình có bàn tay. Ghi thêm một chút nữa nhé.
               </p>
             )}
           </div>

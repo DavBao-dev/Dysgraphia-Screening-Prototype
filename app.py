@@ -106,8 +106,8 @@ else:  # Live camera - MediaPipe chay trong trinh duyet (60fps)
             fps = float(data.get("fps", 30.0))
             if landmarks.ndim != 3 or landmarks.shape[1:] != (21, 3):
                 raise ValueError(f"Landmarks shape khong hop le: {landmarks.shape}")
-            if landmarks.shape[0] < 15:
-                raise ValueError(f"Khong du frame co ban tay: can >= 15, moi duoc {landmarks.shape[0]} frame.")
+            if landmarks.shape[0] < 5:
+                raise ValueError(f"Khong du frame co ban tay: can >= 5, moi duoc {landmarks.shape[0]} frame.")
             predictor_a = get_model_a(path_model_a)
             result_a = predictor_a.predict_kinematics(landmarks, fps=fps)
             st.session_state.cam_features = result_a["features"]
@@ -166,9 +166,9 @@ if run:
                     tmp_path = tmp.name
                 try:
                     trajectory, fps = model_a_adapter.extract_landmarks_from_video(tmp_path)
-                    if trajectory.shape[0] < 15:
+                    if trajectory.shape[0] < 5:
                         raise ValueError(
-                            f"Khong du du lieu: can >= 15 frame co ban tay, moi duoc {trajectory.shape[0]} frame."
+                            f"Khong du du lieu: can >= 5 frame co ban tay, moi duoc {trajectory.shape[0]} frame."
                         )
                     predictor_a = get_model_a(path_model_a)
                     result_a = predictor_a.predict_kinematics(trajectory, fps=fps)

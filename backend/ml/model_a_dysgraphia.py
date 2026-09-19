@@ -309,7 +309,7 @@ class KinematicFeatureExtractor:
     def __init__(
         self,
         fps: float = 30.0,
-        minimum_frames: int = 10,
+        minimum_frames: int = 5,
         pause_threshold: float = 0.005,
         tremor_band: tuple[float, float] = (3.0, 8.0),
     ) -> None:
@@ -501,9 +501,9 @@ class HandLandmarkRecorder:
         max_num_hands: int = 1,
         preferred_hand: str | None = None,
         static_image_mode: bool = False,
-        model_complexity: int = 1,
-        min_detection_confidence: float = 0.5,
-        min_tracking_confidence: float = 0.5,
+        model_complexity: int = 0,
+        min_detection_confidence: float = 0.4,
+        min_tracking_confidence: float = 0.4,
         window_name: str = "Model A - Hand Tracking (press 'q' to stop)",
     ) -> None:
         if preferred_hand is not None and preferred_hand not in {"Left", "Right"}:

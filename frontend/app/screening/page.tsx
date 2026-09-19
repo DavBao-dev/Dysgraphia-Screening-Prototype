@@ -12,8 +12,7 @@ import RunButton from "@/components/RunButton";
 import type { DropzoneValue } from "@/components/Dropzone";
 import type { LiveData } from "@/components/LiveCamera";
 import { runScreening } from "@/lib/api";
-
-const MIN_LIVE_FRAMES = 15;
+import { MIN_LIVE_FRAMES } from "@/lib/constants";
 
 const PROGRESS_STEPS = ["1. Chuyển động tay", "2. Chữ viết tay", "3. Kết quả"];
 
@@ -141,7 +140,7 @@ export default function ScreeningPage() {
               <DetailsSection>
                 <ul className="list-disc space-y-1 pl-4">
                   <li>Một đoạn video ngắn (vài giây) với bàn tay trong khung hình là đủ.</li>
-                  <li>Cần ít nhất 5 khung hình có bàn tay để phân tích chuyển động.</li>
+                  <li>Cần ít nhất {MIN_LIVE_FRAMES} khung hình có bàn tay để phân tích chuyển động.</li>
                   <li>Đảm bảo đủ ánh sáng và bàn tay nằm gọn trong khung hình.</li>
                   <li>Video chỉ dùng trong phiên hiện tại, không lưu lại hình ảnh gốc.</li>
                 </ul>

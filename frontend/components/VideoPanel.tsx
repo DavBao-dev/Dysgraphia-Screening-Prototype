@@ -2,6 +2,7 @@
 
 import Dropzone, { type DropzoneValue } from "./Dropzone";
 import LiveCamera, { type LiveData } from "./LiveCamera";
+import { MIN_LIVE_FRAMES } from "@/lib/constants";
 
 interface VideoPanelProps {
   mode: "video" | "live";
@@ -12,8 +13,6 @@ interface VideoPanelProps {
   onLiveData: (data: LiveData | null) => void;
   onRetake?: () => void;
 }
-
-const MIN_FRAMES = 5;
 
 export default function VideoPanel({
   mode,
@@ -54,9 +53,9 @@ export default function VideoPanel({
         ) : (
           <div>
             <LiveCamera onResult={(data) => onLiveData(data)} onRetake={onRetake} />
-            {frameCount > 0 && frameCount < MIN_FRAMES && (
+            {frameCount > 0 && frameCount < MIN_LIVE_FRAMES && (
               <p className="mt-3 text-sm text-amber">
-                Cần ít nhất 5 khung hình có bàn tay. Ghi thêm một chút nữa nhé.
+                Cần ít nhất {MIN_LIVE_FRAMES} khung hình có bàn tay. Ghi thêm một chút nữa nhé.
               </p>
             )}
           </div>

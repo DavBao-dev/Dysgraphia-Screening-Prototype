@@ -40,6 +40,9 @@ htmlcov/
 # CSV data written at runtime by db.py
 data/
 
+# Log cua run-dev.ps1
+logs/
+
 # === IDE / editor ===
 .vscode/
 .idea/

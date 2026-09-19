@@ -31,7 +31,6 @@ htmlcov/
 .env
 .env.*
 !.env.example
-.streamlit/secrets.toml
 
 # === Local databases (runtime data) ===
 *.db

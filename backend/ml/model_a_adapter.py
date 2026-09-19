@@ -2,7 +2,7 @@
 model_a_adapter.py - Chay model_a_dysgraphia.py o che do headless (khong GUI).
 
 File goc model_a_dysgraphia.py cua ban dung cv2.imshow()/waitKey() de hien thi
-webcam truc tiep - cach nay KHONG chay duoc tren server (Streamlit chay tren
+webcam truc tiep - cach nay KHONG chay duoc tren server (backend FastAPI chay tren
 server khong co man hinh, cv2.imshow se bao loi hoac treo).
 
 File nay dung lai dung logic MediaPipe (mo hinh 21 diem tay cua Google) va

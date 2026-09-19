@@ -1,96 +1,154 @@
-# Dysgraphia Screening Prototype (Streamlit + MySQL)
+# Dysgraphia Screening — FastAPI + Next.js
 
-## Cai dat & chay
+Ứng dụng sàng lọc khó viết (dysgraphia): ghi lại **chuyển động tay** (video tải lên hoặc
+camera trực tiếp) và **ảnh chữ viết tay**, chạy 2 mô hình độc lập rồi tổng hợp thành một
+kết quả sàng lọc. Kết quả **chỉ mang tính tham khảo, không phải chẩn đoán y tế**.
+
+Giao diện Streamlit cũ (`app.py`, `live_camera.py`, `live_cam_component/`) **đã được xoá** —
+UI hiện tại là Next.js + Tailwind trong `frontend/`.
+
+## Kiến trúc
+
+```
+frontend/  Next.js 16 + Tailwind, giao diện tiếng Việt
+   │  fetch("/api/*")  →  next.config.ts rewrites  →  http://127.0.0.1:8000
+   ▼
+backend/   FastAPI
+   ├─ routes/     screening.py, history.py            (6 endpoint)
+   ├─ services/   model_a_service, model_b_service, ensemble_service
+   ├─ ml/         model_a_adapter, model_a_dysgraphia, dysgraphia_predictor,
+   │              image_features, inference, inference_openvino
+   ├─ config.py   đường dẫn weights, MIN_MODEL_A_FRAMES, giới hạn upload
+   └─ db.py       lưu CSV trong data/  (thay MySQL/SQLite)
+weights/   model + scaler
+data/      CSV sinh lúc chạy: sessions, model_a_features, model_b_features, predictions
+```
+
+## Cài đặt & chạy
+
+### 1. Backend
 
 ```bash
+python -m venv .venv
+.venv\Scripts\activate            # Windows
 pip install -r requirements.txt
-streamlit run app.py
+uvicorn backend.main:app --reload --port 8000
 ```
 
-**LUU Y VE MEDIAPIPE**: `requirements.txt` ghim cung `mediapipe==0.10.14`.
-Ban KHONG duoc nang cap mediapipe len ban moi hon (0.10.15+), vi ban moi da
-bo API `mediapipe.python.solutions.hands` ma file `model_a_dysgraphia.py`
-cua ban dang dung - neu nang cap se bi loi
-`ModuleNotFoundError: No module named 'mediapipe.python'`.
+- Kiểm tra: `GET http://127.0.0.1:8000/api/health` → `{"status":"ok", ...}`
+- Tài liệu tự động: `http://127.0.0.1:8000/docs`
 
-## Cau truc file
+### 2. Frontend
 
-```
-parkinson_prototype/
-  app.py                   # Giao dien Streamlit
-  model_a_dysgraphia.py    # File GOC cua ban (khong sua) - MediaPipe + tinh feature
-  model_a_adapter.py       # Adapter: chay model_a_dysgraphia.py o che do headless
-                            # (doc video da upload, khong dung cv2.imshow vi server
-                            # khong co man hinh)
-  image_features.py        # Trich 2 feature thu cong cho Model B (do day muc, lech dong)
-  inference.py             # Load + chay Model B: ResNet50 backbone + MLP head (weight that)
-  db.py                    # SQLite: luu feature + ket qua
-  weights/model_b.pt   # Weight MLP head cua ban (dat san trong nay)
-  requirements.txt
+```bash
+cd frontend
+npm install
+npm run dev                       # http://localhost:3000
 ```
 
-## Kien truc Model B (suy ra TU CHINH file weight ban dua, khong doan)
+Bản production: `npm run build && npm run start`
 
-State dict co cac key: `net.0` (Linear 2050->128), `net.3` (Linear 128->32),
-`net.5` (Linear 32->1). Suy ra:
+`frontend/next.config.ts` proxy `/api/*` sang backend `127.0.0.1:8000`, nên chỉ cần mở cổng 3000.
 
+**Yêu cầu:** Python 3.11+ (đã kiểm thử với 3.12), Node.js LTS (đã kiểm thử 24.x). Cần internet
+cho lần đầu tải weight ResNet50 (nhánh PyTorch) và cho CDN MediaPipe JS (`@mediapipe/hands@0.4`)
+ở chế độ camera trực tiếp.
+
+## API
+
+| Method | Path | Mô tả |
+| --- | --- | --- |
+| POST | `/api/screening` | Sàng lọc đầy đủ, **có lưu** CSV. multipart: `patient_id`, `model_a_source` (`video` \| `live`), `video` (file) hoặc `landmarks_json`, `image` (tuỳ chọn) → trả `session_id` + kết quả Model A/B/ensemble |
+| POST | `/api/screening/model-a` | Chỉ Model A, **không lưu** |
+| POST | `/api/screening/model-b` | Chỉ Model B (ảnh), **không lưu** |
+| GET | `/api/health` | Trạng thái dịch vụ |
+| GET | `/api/history?limit=50` | Danh sách phiên gần nhất |
+| GET | `/api/history/{session_id}` | Chi tiết một phiên (Model A + Model B + ensemble) |
+
+Lỗi: `400` dữ liệu không hợp lệ (video không có bàn tay, thiếu frame, landmark sai shape),
+`413` video > 200 MB, `404` không tìm thấy phiên.
+
+## Pipeline ML
+
+**Model A — chuyển động tay (bắt buộc).**
+video / landmark từ browser → MediaPipe Hands (21 điểm mỗi bàn tay) → `KinematicFeatureExtractor`
+(18 feature: tốc độ, gia tốc, jerk, pause ratio, tremor 3–8 Hz, pinch…) → **Random Forest**
+(`weights/writesense_model_a.joblib`, schema 18 feature) → `risk_score` + `prediction`.
+
+- Cần tối thiểu `MIN_MODEL_A_FRAMES = 5` frame có bàn tay (`backend/config.py`); frontend giữ
+  cùng giá trị ở `frontend/lib/constants.ts` (`MIN_LIVE_FRAMES`).
+- Có "movement gate": bàn tay đứng yên hoặc co cứng → `risk_score = 0.0`,
+  `status = "Hand Stationary / Contracted Pose"`, các feature trả về 0.
+- `EnhancedKinematicFeatureExtractor.extract_features()` vẫn yêu cầu `T >= 15` — chỉ ảnh hưởng
+  nếu bạn load model theo schema 28 feature; model hiện tại là 18 feature nên không đi nhánh này.
+
+**Model B — ảnh chữ viết tay (tuỳ chọn).**
+ảnh → ResNet50 embedding (2048-d, bỏ `fc`) + 2 feature thủ công từ `backend/ml/image_features.py`
+(`ink_thickness_mean`, `baseline_deviation`) → MLP head
+`Linear(2050→128) → ReLU → Dropout → Linear(128→32) → ReLU → Linear(32→1) → Sigmoid`.
+
+- Runtime ưu tiên **ONNX Runtime** (`resnet50_backbone.onnx` + `model_b.onnx`); fallback PyTorch
+  (`model_b.pt`).
+- Scaler 2 giá trị (`model_b_scaler_mean.npy` / `model_b_scaler_scale.npy`, mean ≈ `[9.35, 48.02]`,
+  scale ≈ `[4.09, 35.19]`) được áp dụng cho 2 feature thủ công trước khi vào head. **Đây là giả
+  định suy ra từ chính các file `.npy`** (repo không có training script để xác nhận) — nếu có
+  script gốc, hãy đối chiếu lại. Nếu lúc train bạn dùng thứ tự feature khác, kết quả sẽ SAI mà
+  không báo lỗi (shape vẫn đúng 2050).
+
+**Ensemble.** majority vote giữa Model A và Model B; hoà → trung bình xác suất với ngưỡng 0.5;
+không có ảnh → Model A quyết định. `ensemble_method` được lưu vào CSV.
+
+**MediaPipe.** `requirements.txt` ghim `mediapipe==0.10.14`: các bản 0.10.15+ đã bỏ
+`mediapipe.python.solutions.hands` mà `backend/ml/model_a_dysgraphia.py` đang dùng — nâng cấp sẽ
+lỗi `ModuleNotFoundError: No module named 'mediapipe.python'`.
+
+## Weights (`weights/`)
+
+| File | Vai trò |
+| --- | --- |
+| `writesense_model_a.joblib` | Random Forest cho Model A (bắt buộc) |
+| `resnet50_backbone.onnx` | ResNet50 backbone cho Model B (ONNX, ưu tiên) |
+| `model_b.onnx` | MLP head cho Model B (ONNX) |
+| `model_b.pt` | MLP head cho Model B (dự phòng PyTorch) |
+| `model_b_scaler_mean.npy`, `model_b_scaler_scale.npy` | Scaler cho 2 feature thủ công |
+| `resnet50_openvino.{xml,bin}`, `resnet50_backbone_openvino.{xml,bin}`, `model_b_openvino*.{xml,bin}` | **Legacy, runtime không dùng — KHÔNG xoá** |
+
+## Kiểm thử
+
+```bash
+python -m pytest backend/tests -v        # 32 test: services, API, kinematics
+cd frontend && npm run lint && npm run build
 ```
-Input 2050-d = ResNet50 embedding (2048-d, ImageNet pretrained, bo fc) + 2 feature thu cong
-  -> Linear(2050, 128) -> ReLU -> Dropout -> Linear(128, 32) -> ReLU -> Linear(32, 1) -> Sigmoid
+
+Chạy thử end-to-end:
+
+```bash
+uvicorn backend.main:app --port 8000     # cửa sổ 1
+cd frontend && npm run dev               # cửa sổ 2 → http://localhost:3000/screening
 ```
 
-`inference.py` da load thu va **khop 100%** voi file weight ban upload (test
-thanh cong, khong loi size mismatch).
+## Đã kiểm thử trong lần migrate này
 
-**QUAN TRONG - thu tu 2 feature thu cong**: code hien dang ghep
-`[ink_thickness_mean, baseline_deviation]` theo dung thu tu ban mo ta ban dau
-("do day muc" roi "chenh lech duong ke"). Neu luc train ban dung thu tu khac,
-hoac cong thuc tinh feature khac voi `image_features.py`, ket qua se SAI ma
-KHONG bao loi gi (vi shape van dung 2050) - day la diem duy nhat ban can tu
-kiem tra lai, khong co cach nao code tu phat hien duoc.
+- `python -m pytest backend/tests -q` → **32 passed**.
+- `npm run lint` → sạch; `npm run build` → thành công (Next.js 16.3.5, TypeScript pass).
+- E2E qua proxy của Next.js (`http://localhost:3000` → FastAPI):
+  - `GET /api/health` → `ok`.
+  - `POST /api/screening` (`model_a_source=live`, 5 frame + ảnh) → có `session_id`, Model A `OK`,
+    Model B khả dụng, ensemble majority vote.
+  - `POST /api/screening` (`model_a_source=video`, video thật ~5 MB) → 198 frame bàn tay, fps 30,
+    `data/predictions.csv` có dòng mới và phiên xuất hiện đầu `GET /api/history`.
+  - Gửi 4 frame (dưới ngưỡng) → `400` "cần >= 5 frame có bàn tay".
+  - Các trang `/`, `/screening`, `/history`, `/about`, `/results/{id}` → `200`.
+- **Chưa kiểm thử tự động:** thao tác click trong browser (chọn file qua UI, ghi camera trực tiếp) —
+  cần chạy tay trên máy có webcam.
 
-## Model A - hien CHUA co bo phan loai
+## Ghi chú
 
-File `model_a_dysgraphia.py` ban dua chi co phan **trich xuat feature**
-(dung MediaPipe Hands cua Google de lay 21 diem tren tay, tinh jerk, tremor,
-spectral entropy,...) - CHUA co model phan loai da train (Random Forest/XGBoost
-nhu ban de cap trong thiet ke ban dau).
+- Phiên lưu ở `data/*.csv` (đã `.gitignore`), thay cho MySQL/SQLite trước đây; `parkinson_data.db`
+  không còn dùng.
+- Upload tối đa 200 MB (`MAX_VIDEO_SIZE_MB` trong `backend/config.py`).
+- Kế hoạch/đặc tả của lần migrate nằm trong `docs/superpowers/plans/` và `docs/superpowers/specs/`.
+- Đã biết (chưa xử lý): `/results/{id}` đọc lại phiên qua `GET /api/history/{id}`, mà
+  `db.save_model_a()` chỉ lưu `features_json` + `model_a_output`, nên **xác suất (`score`), `status`
+  và `quality` (fps/frames/duration) của Model A hiện không hiển thị lại được sau khi tải lại trang**.
 
-- `app.py` hien dang chi chay Model B de ra ket qua cuoi cung
-  (`ensemble_method = "model_b_only"`), feature cua Model A van duoc tinh va
-  luu vao SQLite (cot `features_json` trong bang `model_a_features`) de sau
-  nay dung train model.
-- Khi ban co bo phan loai cho Model A (file `.pkl` cua sklearn/joblib hoac
-  `.pt` cua PyTorch), sua ham trong `app.py`:
-  ```python
-  feat_a = model_a_adapter.run_model_a_pipeline(tmp_path)
-  out_a = None  # <-- THAY DOAN NAY bang: out_a = your_model_a.predict(feat_a)
-  ```
-  roi sua lai `final_out`/`method` de ket hop ca 2 model (vd majority vote
-  hoac meta classifier nhu ban de cap ban dau).
-
-## Input Model A la VIDEO, khong phai anh tinh
-
-`model_a_dysgraphia.py` can chuoi thoi gian (nhieu frame) de tinh jerk,
-tremor (dao ham bac 2, 3 theo thoi gian, FFT) - **1 anh tinh khong du du
-lieu** de tinh cac feature nay. App yeu cau upload video (mp4/mov/avi) quay
-lai qua trinh viet, khong phai anh chup ket qua chu viet.
-
-## Test da chay (khong chi la code ly thuyet)
-
-- Load weight that `model_b.pt` vao dung kien truc: **thanh cong,
-  khong loi**.
-- Chay full pipeline Model B (anh gia -> embedding -> concat -> MLP head ->
-  sigmoid): **thanh cong**.
-- Chay `model_a_adapter.py` voi video that qua MediaPipe (mo hinh Google):
-  **thanh cong**, detect dung, bao loi ro rang khi video khong co tay.
-- Tinh feature tu chuoi keypoint qua `EnhancedKinematicFeatureExtractor`:
-  **thanh cong**, ra du 11 feature.
-
-## Khi deploy that (khong con la prototype)
-
-- Lan dau chay se tu tai weight ResNet50 ImageNet tu internet (can mang, vai
-  chuc MB). Neu server khong co internet, tai truoc va luu vao
-  `~/.cache/torch/hub/checkpoints/`.
-- Video upload qua Streamlit gioi han dung luong mac dinh (200MB) - co the
-  chinh trong `.streamlit/config.toml` (`maxUploadSize`).

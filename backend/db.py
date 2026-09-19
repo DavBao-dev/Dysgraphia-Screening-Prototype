@@ -8,7 +8,7 @@ Moi "bang" cua MySQL cu duoc thay bang 1 file CSV trong thu muc data/:
     data/model_b_features.csv   - feature_id, session_id, ink_thickness_mean, baseline_deviation, model_b_output, model_b_probability
     data/predictions.csv        - prediction_id, session_id, model_a_output, model_b_output, final_output, ensemble_method, predicted_at
 
-Giu nguyen ten ham + signature nhu ban MySQL de app.py khong can sua gi.
+Giu nguyen ten ham + signature nhu ban MySQL de backend FastAPI khong phai sua.
 """
 import csv
 import json
@@ -19,7 +19,7 @@ from datetime import datetime
 
 from backend.config import DATA_DIR
 
-# Lock de ghi file an toan khi Streamlit chay nhieu session cung luc
+# Lock de ghi file an toan khi backend FastAPI xu ly nhieu request cung luc
 _LOCK = threading.Lock()
 
 _FILES = {

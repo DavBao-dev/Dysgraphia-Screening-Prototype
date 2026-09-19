@@ -163,7 +163,6 @@ export default function ScreeningPage() {
             </p>
             <div className="mt-3">
               <HandwritingPanel
-                file={imageFile}
                 onFile={handleImageFile}
                 value={imageFile ? { name: imageFile.name, size: imageFile.size } : undefined}
               />

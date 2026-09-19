@@ -10,10 +10,14 @@ dung lai nguyen KinematicFeatureExtractor / EnhancedKinematicFeatureExtractor
 tu file goc de trich feature - CHI thay phan doc frame: doc tu file video da
 upload thay vi webcam, va bo hoan toan phan hien thi cua so.
 """
+import logging
+
 import numpy as np
 import cv2
 
-from model_a_dysgraphia import KinematicFeatureExtractor, EnhancedKinematicFeatureExtractor
+from backend.ml.model_a_dysgraphia import KinematicFeatureExtractor, EnhancedKinematicFeatureExtractor
+
+logger = logging.getLogger("model_a")
 
 
 def extract_landmarks_from_video(video_path: str, max_num_hands: int = 1, preferred_hand: str | None = None):
@@ -25,7 +29,8 @@ def extract_landmarks_from_video(video_path: str, max_num_hands: int = 1, prefer
 
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        raise RuntimeError(f"Khong mo duoc video: {video_path}")
+        raise ValueError("Không thể đọc video này. Hãy thử định dạng MP4 khác.")
+    logger.info("model_a decode: VideoCapture opened, path=%s", video_path)
 
     fps = cap.get(cv2.CAP_PROP_FPS)
     if not np.isfinite(fps) or fps <= 0:
@@ -39,10 +44,12 @@ def extract_landmarks_from_video(video_path: str, max_num_hands: int = 1, prefer
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5,
     ) as hands:
+        total_read = 0
         while True:
             ok, frame = cap.read()
             if not ok:
                 break
+            total_read += 1
 
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             rgb.flags.writeable = False
@@ -60,6 +67,10 @@ def extract_landmarks_from_video(video_path: str, max_num_hands: int = 1, prefer
                 frames.append(landmarks)
 
     cap.release()
+    logger.info(
+        "model_a frame extraction: frames_read=%d hand_frames=%d fps=%.2f duration=%.2fs",
+        total_read, len(frames), fps, (total_read / fps if fps else 0.0),
+    )
 
     if frames:
         trajectory = np.stack(frames, axis=0)  # (T, 21, 3)

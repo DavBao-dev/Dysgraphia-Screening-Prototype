@@ -16,7 +16,7 @@ import torch
 from PIL import Image
 from torchvision import models as tv_models
 
-from inference import DEVICE, _IMAGENET_TRANSFORM
+from backend.ml.inference import DEVICE, _IMAGENET_TRANSFORM
 
 WEIGHTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "weights")
 IR_XML = os.path.join(WEIGHTS_DIR, "resnet50_openvino.xml")

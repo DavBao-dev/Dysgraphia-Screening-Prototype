@@ -17,8 +17,7 @@ import threading
 import uuid
 from datetime import datetime
 
-# Thu muc chua cac file CSV (tu dong tao neu chua co)
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+from backend.config import DATA_DIR
 
 # Lock de ghi file an toan khi Streamlit chay nhieu session cung luc
 _LOCK = threading.Lock()
@@ -154,3 +153,38 @@ def get_history(limit: int = 50):
             break
 
     return rows
+
+
+def get_session(session_id: str) -> dict | None:
+    """Trả về chi tiết một phiên (sessions + model_a + model_b + prediction)."""
+    sessions = {r["session_id"]: r for r in _read_rows("sessions")}
+    if session_id not in sessions:
+        return None
+    a_rows = [r for r in _read_rows("model_a_features") if r["session_id"] == session_id]
+    b_rows = [r for r in _read_rows("model_b_features") if r["session_id"] == session_id]
+    p_rows = [r for r in _read_rows("predictions") if r["session_id"] == session_id]
+    a = a_rows[-1] if a_rows else None
+    b = b_rows[-1] if b_rows else None
+    p = p_rows[-1] if p_rows else None
+    return {
+        "session_id": session_id,
+        "patient_id": sessions[session_id].get("patient_id", ""),
+        "created_at": sessions[session_id].get("created_at", ""),
+        "model_a": {
+            "output": _to_int_or_none(a["model_a_output"]) if a else None,
+            "features_json": json.loads(a["features_json"]) if a else None,
+        },
+        "model_b": {
+            "output": _to_int_or_none(b["model_b_output"]) if b else None,
+            "probability": float(b["model_b_probability"]) if b and b.get("model_b_probability") not in (None, "") else None,
+            "ink_thickness_mean": float(b["ink_thickness_mean"]) if b else None,
+            "baseline_deviation": float(b["baseline_deviation"]) if b else None,
+        },
+        "prediction": {
+            "final_output": _to_int_or_none(p["final_output"]) if p else None,
+            "model_a_output": _to_int_or_none(p["model_a_output"]) if p else None,
+            "model_b_output": _to_int_or_none(p["model_b_output"]) if p else None,
+            "ensemble_method": p.get("ensemble_method", "") if p else "",
+            "predicted_at": p.get("predicted_at", "") if p else "",
+        },
+    }

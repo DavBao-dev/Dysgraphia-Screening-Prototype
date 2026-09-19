@@ -28,7 +28,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 
-from model_a_dysgraphia import (
+from backend.ml.model_a_dysgraphia import (
     EnhancedKinematicFeatureExtractor,
     HandLandmarkRecorder,
     KinematicFeatureExtractor,

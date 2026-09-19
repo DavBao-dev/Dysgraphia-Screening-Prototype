@@ -10,14 +10,14 @@ import os
 import numpy as np
 import pytest
 
-from model_a_dysgraphia import (
+from backend.ml.model_a_dysgraphia import (
     EnhancedKinematicFeatureExtractor,
     KinematicFeatureExtractor,
     index_tip_path_length,
     mean_joint_spread,
     smooth_keypoints,
 )
-from dysgraphia_predictor import BASIC_FEATURE_COLUMNS, DysgraphiaPredictor
+from backend.ml.dysgraphia_predictor import BASIC_FEATURE_COLUMNS, DysgraphiaPredictor
 
 
 def _stationary_trajectory(T: int = 30) -> np.ndarray:

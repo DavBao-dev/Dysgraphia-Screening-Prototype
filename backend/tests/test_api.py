@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from PIL import Image
 
 from backend.main import app
+from backend.config import MAX_VIDEO_SIZE_MB
 
 client = TestClient(app)
 
@@ -87,7 +88,8 @@ def test_screening_video_too_large_returns_413(monkeypatch):
         files={"video": ("big.mp4", b"x" * 100, "video/mp4")},
     )
     assert r.status_code == 413
-    assert "200 MB" in r.json()["detail"]
+    assert "Video quá lớn" in r.json()["detail"]
+    assert str(MAX_VIDEO_SIZE_MB) in r.json()["detail"]
 
 
 def test_screening_video_decode_error_returns_400():

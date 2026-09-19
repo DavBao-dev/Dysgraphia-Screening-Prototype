@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 
+import { MAX_VIDEO_BYTES, MAX_VIDEO_MB, MAX_VIDEO_MSG } from "@/lib/constants";
+
 export interface DropzoneValue {
   name: string;
   size: number;
@@ -35,9 +37,6 @@ function isVideoFile(name: string): boolean {
   return /\.(mp4|mov|avi|mpeg4)$/i.test(name);
 }
 
-const MAX_VIDEO_SIZE = 200 * 1024 * 1024;
-const MAX_VIDEO_MSG = "Video quá lớn. Vui lòng chọn video nhỏ hơn 200 MB.";
-
 export default function Dropzone({ accept, onFile, value, onRemove, title }: DropzoneProps) {
   const isVideoAccept = accept.includes("mp4") || accept.includes("video");
   const dropTitle = title ?? (isVideoAccept ? "Thả video vào đây" : "Thả ảnh vào đây");
@@ -54,7 +53,7 @@ export default function Dropzone({ accept, onFile, value, onRemove, title }: Dro
       setError("Định dạng tệp không hỗ trợ.");
       return;
     }
-    if (isVideoFile(next.name) && next.size > MAX_VIDEO_SIZE) {
+    if (isVideoFile(next.name) && next.size > MAX_VIDEO_BYTES) {
       setError(MAX_VIDEO_MSG);
       return;
     }
@@ -188,7 +187,7 @@ export default function Dropzone({ accept, onFile, value, onRemove, title }: Dro
           </svg>
           <p className="text-sm text-text">{dropTitle}</p>
           <p className="text-sm text-muted">hoặc chọn tệp từ thiết bị của bạn</p>
-          <p className="text-xs text-muted">{isVideoAccept ? "MP4, MOV, AVI, MPEG4 • Tối đa 200 MB" : "PNG, JPG, JPEG"}</p>
+          <p className="text-xs text-muted">{isVideoAccept ? `MP4, MOV, AVI, MPEG4 • Tối đa ${MAX_VIDEO_MB} MB` : "PNG, JPG, JPEG"}</p>
         </div>
       )}
 

@@ -50,6 +50,15 @@ Bản production: `npm run build && npm run start`
 
 `frontend/next.config.ts` proxy `/api/*` sang backend `127.0.0.1:8000`, nên chỉ cần mở cổng 3000.
 
+### 3. Chạy nhanh cả hai bằng 1 lệnh
+
+```powershell
+.\run-dev.ps1           # start backend + frontend (chạy nền, log trong logs\); tự thêm Node vào PATH nếu thiếu
+.\run-dev.ps1 -Attach   # start rồi xem log trực tiếp; Ctrl+C để dừng cả hai
+.\run-dev.ps1 -Status   # xem trạng thái 2 server
+.\run-dev.ps1 -Stop     # dừng cả hai (port 8000/3000 được giải phóng)
+```
+
 **Yêu cầu:** Python 3.11+ (đã kiểm thử với 3.12), Node.js LTS (đã kiểm thử 24.x). Cần internet
 cho lần đầu tải weight ResNet50 (nhánh PyTorch) và cho CDN MediaPipe JS (`@mediapipe/hands@0.4`)
 ở chế độ camera trực tiếp.
@@ -66,7 +75,8 @@ cho lần đầu tải weight ResNet50 (nhánh PyTorch) và cho CDN MediaPipe JS
 | GET | `/api/history/{session_id}` | Chi tiết một phiên (Model A + Model B + ensemble) |
 
 Lỗi: `400` dữ liệu không hợp lệ (video không có bàn tay, thiếu frame, landmark sai shape),
-`413` video > 200 MB, `404` không tìm thấy phiên.
+`413` video vượt giới hạn dung lượng (mặc định **4096 MB** — `MAX_VIDEO_SIZE_MB` trong
+`backend/config.py`), `404` không tìm thấy phiên.
 
 ## Pipeline ML
 
@@ -138,6 +148,9 @@ cd frontend && npm run dev               # cửa sổ 2 → http://localhost:300
   - `POST /api/screening` (`model_a_source=video`, video thật ~5 MB) → 198 frame bàn tay, fps 30,
     `data/predictions.csv` có dòng mới và phiên xuất hiện đầu `GET /api/history`.
   - Gửi 4 frame (dưới ngưỡng) → `400` "cần >= 5 frame có bàn tay".
+  - `POST /api/screening` (`model_a_source=video`, video 4K **289 MB / 48 giây**) qua proxy → `200`,
+    1423 frame bàn tay, `score=0.315` (khoảng 100 giây xử lý MediaPipe). Trước khi nâng giới hạn và
+    `proxyTimeout`, cùng video này bị `500` (`socket hang up`) sau đúng 30 giây do proxy dev.
   - Các trang `/`, `/screening`, `/history`, `/about`, `/results/{id}` → `200`.
 - **Chưa kiểm thử tự động:** thao tác click trong browser (chọn file qua UI, ghi camera trực tiếp) —
   cần chạy tay trên máy có webcam.
@@ -146,7 +159,14 @@ cd frontend && npm run dev               # cửa sổ 2 → http://localhost:300
 
 - Phiên lưu ở `data/*.csv` (đã `.gitignore`), thay cho MySQL/SQLite trước đây; `parkinson_data.db`
   không còn dùng.
-- Upload tối đa 200 MB (`MAX_VIDEO_SIZE_MB` trong `backend/config.py`).
+- Upload tối đa **4096 MB** (`MAX_VIDEO_SIZE_MB` trong `backend/config.py`; UI dùng
+  `MAX_VIDEO_MB` trong `frontend/lib/constants.ts`). `frontend/next.config.ts` cũng chặn body của
+  proxy `/api/*` qua `experimental.proxyClientMaxBodySize` — giá trị này phải là **số byte**
+  (chuỗi kiểu `"250mb"` không được parse nên giới hạn sẽ vô hiệu) và nên đặt **cao hơn** giới hạn
+  của backend, nếu không proxy sẽ cắt body trước khi backend kịp trả `413`.
+- `frontend/next.config.ts` cũng có `experimental.proxyTimeout`: mặc định của Next dev là **30 giây**
+  (`proxyTimeout || 30000`), nên video 4K hoặc video dài sẽ bị proxy cắt giữa chừng (`socket hang up`)
+  dù backend vẫn đang xử lý. Repo này đặt 30 phút.
 - Kế hoạch/đặc tả của lần migrate nằm trong `docs/superpowers/plans/` và `docs/superpowers/specs/`.
 - Đã biết (chưa xử lý): `/results/{id}` đọc lại phiên qua `GET /api/history/{id}`, mà
   `db.save_model_a()` chỉ lưu `features_json` + `model_a_output`, nên **xác suất (`score`), `status`

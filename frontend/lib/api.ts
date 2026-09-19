@@ -1,4 +1,5 @@
 import type { HealthResponse, HistoryRow, ScreeningResponse, SessionDetail } from "@/types/screening";
+import { MAX_VIDEO_MSG } from "@/lib/constants";
 
 export type ApiError = Error & { status?: number };
 
@@ -19,7 +20,7 @@ async function j<T>(res: Promise<Response>): Promise<T> {
       throw err;
     }
     if (r.status === 413) {
-      const err: ApiError = new Error("Video quá lớn. Vui lòng chọn video nhỏ hơn 200 MB.");
+      const err: ApiError = new Error(MAX_VIDEO_MSG);
       err.status = r.status;
       throw err;
     }

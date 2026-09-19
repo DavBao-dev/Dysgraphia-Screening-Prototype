@@ -7,7 +7,7 @@ from functools import lru_cache
 
 import numpy as np
 
-from backend.config import MIN_MODEL_A_FRAMES, MODEL_A_WEIGHTS
+from backend.config import MAX_VIDEO_SIZE_MB, MIN_MODEL_A_FRAMES, MODEL_A_WEIGHTS
 from backend.ml import model_a_adapter
 from backend.ml.dysgraphia_predictor import DysgraphiaPredictor
 
@@ -53,7 +53,9 @@ def _file_size(fileobj) -> int:
 
 def run_model_a_video(fileobj, suffix: str = ".mp4", max_bytes: int | None = None, filename: str | None = None) -> dict:
     if max_bytes and _file_size(fileobj) > max_bytes:
-        raise VideoTooLargeError("Video quá lớn. Vui lòng chọn video nhỏ hơn 200 MB.")
+        raise VideoTooLargeError(
+            f"Video quá lớn. Vui lòng chọn video nhỏ hơn {MAX_VIDEO_SIZE_MB} MB."
+        )
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
         shutil.copyfileobj(fileobj, tmp, length=1024 * 256)
         tmp_path = tmp.name

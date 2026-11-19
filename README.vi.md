@@ -95,17 +95,29 @@ video / landmark từ browser → MediaPipe Hands (21 điểm mỗi bàn tay) �
   nếu bạn load model theo schema 28 feature; model hiện tại là 18 feature nên không đi nhánh này.
 
 **Model B — ảnh chữ viết tay (tuỳ chọn).**
-ảnh → ResNet50 embedding (2048-d, bỏ `fc`) + 2 feature thủ công từ `backend/ml/image_features.py`
-(`ink_thickness_mean`, `baseline_deviation`) → MLP head
+ảnh → `image_features.normalize_handwriting` (nhị phân hoá, mực đen trên nền trắng) →
+ResNet50 embedding (2048-d, bỏ `fc`) + 2 feature thủ công từ `backend/ml/image_features.py`
+(`ink_thickness_mean`, `baseline_deviation`, chuẩn hoá bằng StandardScaler) → MLP head
 `Linear(2050→128) → ReLU → Dropout → Linear(128→32) → ReLU → Linear(32→1) → Sigmoid`.
 
 - Runtime ưu tiên **ONNX Runtime** (`resnet50_backbone.onnx` + `model_b.onnx`); fallback PyTorch
   (`model_b.pt`).
-- Scaler 2 giá trị (`model_b_scaler_mean.npy` / `model_b_scaler_scale.npy`, mean ≈ `[9.35, 48.02]`,
-  scale ≈ `[4.09, 35.19]`) được áp dụng cho 2 feature thủ công trước khi vào head. **Đây là giả
-  định suy ra từ chính các file `.npy`** (repo không có training script để xác nhận) — nếu có
-  script gốc, hãy đối chiếu lại. Nếu lúc train bạn dùng thứ tự feature khác, kết quả sẽ SAI mà
-  không báo lỗi (shape vẫn đúng 2050).
+- `model_b.onnx`, `model_b.pt` và scaler (`model_b_scaler_mean.npy` / `model_b_scaler_scale.npy`)
+  được tạo bởi `train_model_b.py`, dùng **đúng code của app** để tính đặc trưng. Sửa bước tiền xử
+  lý hay đặc trưng nào thì phải chạy lại script này.
+- Bước chuẩn hoá là bắt buộc: bộ dữ liệu Mendeley là chữ TRẮNG trên nền ĐEN, còn ảnh chụp vở là
+  chữ TỐI trên nền SÁNG. Trước khi có bước này, app coi nền là mực và trọng số cũ (train trong
+  notebook với đặc trưng khác) chỉ phát hiện 38,9% ảnh nguy cơ cao ngay trên dữ liệu train.
+- Đánh giá (kiểm định chéo 5 phần theo học sinh, `model_b_cv_report.json`): accuracy 82,7%,
+  độ nhạy 83,2%, độ đặc hiệu 82,2%, ROC-AUC 0,90.
+
+```bash
+python train_model_b.py --data-dir path/to/model_b --cv-only   # chỉ đánh giá
+python train_model_b.py --data-dir path/to/model_b             # đánh giá + ghi đè weights/model_b.*
+```
+
+Xuất ONNX cần gói `onnx` (không có trong `requirements.txt`). Bản `onnx` mới cần `protobuf` mới hơn
+mức `mediapipe==0.10.14` cho phép, nên hãy cài trong một virtualenv riêng.
 
 **Ensemble.** majority vote giữa Model A và Model B; hoà → trung bình xác suất với ngưỡng 0.5;
 không có ảnh → Model A quyết định. `ensemble_method` được lưu vào CSV.
@@ -128,7 +140,7 @@ lỗi `ModuleNotFoundError: No module named 'mediapipe.python'`.
 ## Kiểm thử
 
 ```bash
-python -m pytest backend/tests -v        # 32 test: services, API, kinematics
+python -m pytest backend/tests -v        # 33 test: services, API, kinematics
 cd frontend && npm run lint && npm run build
 ```
 

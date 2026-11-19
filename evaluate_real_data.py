@@ -26,8 +26,6 @@ from sklearn.metrics import (
 )
 
 from backend.ml.dysgraphia_predictor import DysgraphiaPredictor
-from backend.ml import inference
-from backend.ml import image_features
 
 MODEL_A_DIR = "data/for_testing/model_a"
 MODEL_B_DIR = "data/for_testing/model_b"
@@ -104,8 +102,14 @@ def iter_model_a(predictor, prior=None):
             print(f"  {fname}: LOI {e}", flush=True)
 
 
-def evaluate_model_b(backbone, head):
-    """Chay Model B tren cac anh that. Tra ve [(name, label, prob)]."""
+def evaluate_model_b(backbone=None, head=None):
+    """Chay Model B tren cac anh that qua dung pipeline cua app. Tra ve [(name, label, prob)].
+
+    LUU Y: neu cac anh nay cung la anh da dung de train (bo Mendeley), ket qua la
+    diem tren tap train. Danh gia khong ro ri: chay train_model_b.py --cv-only.
+    """
+    from backend.services import model_b_service
+
     out = []
     for cls_dir, label in (("Potential Dysgraphia", 1), ("Low Potential Dysgraphia", 0)):
         d = os.path.join(MODEL_B_DIR, cls_dir)
@@ -115,9 +119,7 @@ def evaluate_model_b(backbone, head):
             path = os.path.join(d, fname)
             with open(path, "rb") as f:
                 img_bytes = f.read()
-            feat = image_features.extract_ink_and_baseline_features(img_bytes)
-            extra = [feat["ink_thickness_mean"], feat["baseline_deviation"]]
-            _, prob = inference.run_model_b(backbone, head, img_bytes, extra_features=extra)
+            prob = model_b_service.run_model_b_image(img_bytes)["score"]
             out.append((fname, label, float(prob)))
     return out
 
@@ -230,9 +232,7 @@ def main():
         print(f"  [{tag}] {r[0]}: risk={r[2]:.3f}")
 
     print("\n=== [2/2] DANH GIA MODEL B (anh that) ===")
-    backbone = inference.load_resnet50_backbone()
-    head = inference.load_model_b_head("weights/model_b.pt")
-    res_b = load_or_compute("model_b", lambda: evaluate_model_b(backbone, head), cache)
+    res_b = load_or_compute("model_b", evaluate_model_b, cache)
     m_b = compute_metrics([r[1] for r in res_b], [r[2] for r in res_b])
     print(f"  Mau: {m_b['n']} (dysgraphic={m_b['pos']}, control={m_b['n'] - m_b['pos']})")
 

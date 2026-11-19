@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Ban deploy (deploy/huggingface/Dockerfile) build voi NEXT_OUTPUT_STANDALONE=1 de chay
+  // `node server.js` ma khong can node_modules. Chay local van dung `next dev` / `next start`.
+  output: process.env.NEXT_OUTPUT_STANDALONE === "1" ? "standalone" : undefined,
   async rewrites() {
     return [{ source: "/api/:path*", destination: "http://127.0.0.1:8000/api/:path*" }];
   },

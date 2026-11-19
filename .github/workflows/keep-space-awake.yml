@@ -1,0 +1,19 @@
+# Free Hugging Face CPU Spaces go to sleep after about 48 hours without visits.
+# Ping the demo every 6 hours so it stays up for the judges.
+# GitHub turns off scheduled workflows after 60 days without commits; re-enable it in the Actions tab if needed.
+name: Keep Hugging Face Space awake
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /api/health
+        env:
+          SPACE_URL: https://SPACE-OWNER-dysgraphia-screening.hf.space
+        run: |
+          curl -fsS --retry 5 --retry-delay 60 --retry-all-errors --max-time 120 "$SPACE_URL/api/health"

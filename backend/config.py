@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -12,7 +13,8 @@ MODEL_B_SCALER_MEAN = WEIGHTS_DIR / "model_b_scaler_mean.npy"
 MODEL_B_SCALER_SCALE = WEIGHTS_DIR / "model_b_scaler_scale.npy"
 
 USE_MODEL_B_SCALER = True
-MAX_VIDEO_SIZE_MB = 4096
+# Ban deploy (deploy/huggingface/Dockerfile) dat bien moi truong nay thap hon de may chu nho khong bi qua tai.
+MAX_VIDEO_SIZE_MB = int(os.environ.get("MAX_VIDEO_SIZE_MB", "4096"))
 MAX_VIDEO_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024
 MIN_MODEL_A_FRAMES = 5
 MODEL_A_VIDEO_EXTS = {".mp4", ".mov", ".avi", ".mpeg4", ".mkv"}

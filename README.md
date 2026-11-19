@@ -105,6 +105,18 @@ python train_model_b.py --data-dir path/to/model_b             # evaluate, then 
 
 Exporting the ONNX file needs the `onnx` package, which is not in `requirements.txt`. Recent `onnx` releases need a newer `protobuf` than `mediapipe==0.10.14` allows, so install it in a separate virtual environment.
 
+## Deployment (Hugging Face Spaces)
+
+`deploy/huggingface/` holds everything a [Docker Space](https://huggingface.co/docs/hub/spaces-sdks-docker) needs:
+
+1. Create a Space with the **Docker** SDK (blank template, free CPU basic hardware).
+2. Copy `deploy/huggingface/Dockerfile` and `deploy/huggingface/README.md` to the root of the Space repository.
+3. The Space builds the image: it clones this repository at `main`, builds the frontend in standalone mode, and runs FastAPI on `127.0.0.1:8000` with Next.js on port 7860 in front of it.
+
+To ship a new version, push to `main` and use **Settings → Factory rebuild** on the Space. The hosted demo limits video uploads to 200 MB (`MAX_VIDEO_MB` build argument). Free Spaces sleep after about 48 hours without visits, so `.github/workflows/keep-space-awake.yml` pings `/api/health` every 6 hours.
+
+The demo server is public: anyone can open the history page, and sessions are lost when the Space restarts. Do not upload real children's data there.
+
 ## Privacy and responsible use
 
 - The app is meant to be used with the consent of the child's parent or guardian.

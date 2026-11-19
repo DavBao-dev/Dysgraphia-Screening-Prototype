@@ -30,7 +30,9 @@ flowchart LR
 
 **Model A: hand movement (required).** [MediaPipe Hands](https://developers.google.com/mediapipe) tracks 21 hand landmarks in each frame. From these, 18 kinematic features are computed: speed, acceleration, jerk, pause ratio, tremor energy in the 3–8 Hz band, pinch distance and others. A Random Forest turns the features into a risk score. If the hand stays still or stays clenched, the "movement gate" returns a risk score of 0 instead of an unreliable prediction. At least 5 frames with a visible hand are required.
 
-**Model B: handwriting image (optional).** A ResNet50 backbone produces a 2,048-dimensional image embedding. Two hand-crafted features are added: average ink thickness and deviation from the writing baseline. A small MLP head (2,050 → 128 → 32 → 1, sigmoid) outputs a probability. Inference runs on ONNX Runtime, with a PyTorch fallback.
+**Model B: handwriting image (optional).** The photo is first binarised and normalised to dark ink on a white background, so a photo of a notebook page and the white-on-black training images are processed the same way. A ResNet50 backbone produces a 2,048-dimensional image embedding. Two hand-crafted features are added: average ink thickness and deviation from the writing baseline. A small MLP head (2,050 → 128 → 32 → 1, sigmoid) outputs a probability. Inference runs on ONNX Runtime, with a PyTorch fallback.
+
+The head is trained by `train_model_b.py` on the [Potential Dysgraphia Handwriting Dataset of School-Age Children](https://data.mendeley.com/datasets/39hr8dx76p/1) (Malaysia, 83 children, 3 sentences each), using the same code the app runs. In 5-fold cross-validation split by child, it reached 82.7% accuracy, 83.2% sensitivity, 82.2% specificity and a ROC-AUC of 0.90 (details in `model_b_cv_report.json`). The training data is Malay handwriting, so results on Vietnamese handwriting still need to be checked.
 
 **Ensemble.** The two models vote. If they disagree, their probabilities are averaged and compared with a 0.5 threshold. Without a photo, Model A decides alone.
 
@@ -82,8 +84,9 @@ backend/
   routes/    screening and history endpoints
   services/  Model A, Model B and ensemble services
   ml/        kinematic features, image features, model adapters, ONNX / PyTorch inference
-  tests/     32 tests for the services, API and kinematics
+  tests/     33 tests for the services, API and kinematics
 weights/     trained models and scalers
+train_model_b.py   Model B evaluation (cross-validation by child) and retraining
 ```
 
 ## Testing
@@ -92,6 +95,15 @@ weights/     trained models and scalers
 python -m pytest backend/tests -v
 cd frontend && npm run lint && npm run build
 ```
+
+To re-evaluate or retrain Model B, unzip the Mendeley dataset so that `Potential Dysgraphia/` and `Low Potential Dysgraphia/` sit in one folder, then run:
+
+```bash
+python train_model_b.py --data-dir path/to/model_b --cv-only   # evaluate only
+python train_model_b.py --data-dir path/to/model_b             # evaluate, then overwrite weights/model_b.*
+```
+
+Exporting the ONNX file needs the `onnx` package, which is not in `requirements.txt`. Recent `onnx` releases need a newer `protobuf` than `mediapipe==0.10.14` allows, so install it in a separate virtual environment.
 
 ## Privacy and responsible use
 
@@ -102,8 +114,8 @@ cd frontend && npm run lint && npm run build
 ## Known limitations
 
 - After a page reload, the results page cannot yet show Model A's probability or video-quality details again, because they are not stored.
-- The Model B scaler assumes a fixed order for the two hand-crafted features. This order was inferred from the saved files, not confirmed against a training script.
-- The model training code is not included in this repository.
+- Model B was trained and evaluated only on Malay handwriting. It has not yet been tested on Vietnamese handwriting or on photos of real notebook pages.
+- The training code for Model A is not included in this repository. Model A was trained on synthetic kinematic features, and the available real videos are only enough to check that the pipeline runs, not to measure accuracy.
 
 ## Team
 

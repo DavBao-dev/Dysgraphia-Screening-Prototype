@@ -3,11 +3,11 @@
 Đường dẫn mặc định: ONNX Runtime (`resnet50_backbone.onnx` + `model_b.onnx`),
 fallback PyTorch (`weights/model_b.pt`).
 
-LƯU Ý SCALER: `model_b_scaler_mean.npy` / `model_b_scaler_scale.npy` lưu đúng 2
-giá trị (mean ≈ [9.35, 48.02], scale ≈ [4.09, 35.19]) khớp với 2 feature thủ công
-[ink_thickness_mean, baseline_deviation]. Ta GIẢ ĐỊNH 2 feature này được chuẩn hóa
-bằng StandardScaler trước khi vào head lúc training — suy luận từ shape/giá trị file,
-KHÔNG có training script trong repo để xác nhận. Nếu có script gốc hãy đối chiếu.
+Trọng số, scaler và pipeline này được tạo bởi `train_model_b.py` ở gốc repo:
+ảnh → `image_features.normalize_handwriting` (mực đen trên nền trắng) → 2 feature
+thủ công [ink_thickness_mean, baseline_deviation] chuẩn hóa bằng StandardScaler
+(`model_b_scaler_mean.npy` / `model_b_scaler_scale.npy`) + embedding ResNet50 →
+MLP head. Sửa bước nào ở đây thì phải chạy lại `train_model_b.py`.
 """
 import io
 from functools import lru_cache
@@ -53,6 +53,7 @@ def last_features() -> dict:
 
 
 def run_model_b_image(image_bytes: bytes) -> dict:
+    image_bytes = image_features.normalize_handwriting(image_bytes)
     feats = image_features.extract_ink_and_baseline_features(image_bytes)
     _last.clear()
     _last.update(feats)
@@ -70,14 +71,20 @@ def run_model_b_image(image_bytes: bytes) -> dict:
     return {"available": True, "prediction": 1 if score >= 0.5 else 0, "score": round(float(score), 6)}
 
 
-def _run_onnx(image_bytes: bytes, hc: np.ndarray) -> float:
+def extract_embedding(image_bytes: bytes) -> np.ndarray:
+    """Embedding ResNet50 (ONNX) 2048-d, shape (1, 2048). Dùng chung cho app và train_model_b.py."""
     from PIL import Image
 
-    (backbone, head) = _onnx_inputs()[0]
+    backbone = _onnx_inputs()[0][0]
     pil = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     t = _IMAGENET_TRANSFORM(pil).unsqueeze(0).numpy().astype(np.float32)  # (1,3,224,224)
-    emb = np.asarray(backbone.run(None, {"image": t})[0]).reshape(1, 2048).astype(np.float32)
-    out = head.run(None, {"embedding": emb, "handcrafted": hc.reshape(1, 2)})[0]
+    return np.asarray(backbone.run(None, {"image": t})[0]).reshape(1, 2048).astype(np.float32)
+
+
+def _run_onnx(image_bytes: bytes, hc: np.ndarray) -> float:
+    head = _onnx_inputs()[0][1]
+    emb = extract_embedding(image_bytes)
+    out = head.run(None, {"embedding": emb, "handcrafted": hc.reshape(1, 2).astype(np.float32)})[0]
     return float(np.asarray(out).reshape(-1)[0])
 
 

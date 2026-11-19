@@ -1,0 +1,451 @@
+{
+ "n_images": 248,
+ "n_children": {
+  "PD": 38,
+  "LPD": 45
+ },
+ "seeds": [
+  42,
+  7,
+  123,
+  2024,
+  99
+ ],
+ "primary_seed": 42,
+ "primary": {
+  "accuracy": 0.8266129032258065,
+  "sensitivity": 0.831858407079646,
+  "specificity": 0.8222222222222222,
+  "precision": 0.7966101694915254,
+  "f1": 0.8138528138528137,
+  "roc_auc": 0.9000327761389709,
+  "tp": 94,
+  "fn": 19,
+  "tn": 111,
+  "fp": 24
+ },
+ "primary_ci95": {
+  "accuracy": [
+   0.7611336032388664,
+   0.88710810985879
+  ],
+  "sensitivity": [
+   0.7345132743362832,
+   0.9122807017543859
+  ],
+  "specificity": [
+   0.725925925925926,
+   0.9037037037037037
+  ],
+  "precision": [
+   0.7155154892066162,
+   0.8796296296296297
+  ],
+  "f1": [
+   0.742081447963801,
+   0.8776627297282982
+  ],
+  "roc_auc": [
+   0.8399687297917386,
+   0.9507729131087306
+  ]
+ },
+ "mean_over_seeds": {
+  "accuracy": 0.8266129032258066,
+  "sensitivity": 0.7699115044247787,
+  "specificity": 0.874074074074074,
+  "precision": 0.8379874438855482,
+  "f1": 0.8015363173369383,
+  "roc_auc": 0.8989052769583743
+ },
+ "sd_over_seeds": {
+  "accuracy": 0.008064516129032251,
+  "sensitivity": 0.03627239209189236,
+  "specificity": 0.0269124475919777,
+  "precision": 0.022018862910869585,
+  "f1": 0.012844704517399852,
+  "roc_auc": 0.00854047319199842
+ },
+ "per_seed": [
+  {
+   "accuracy": 0.8266129032258065,
+   "sensitivity": 0.831858407079646,
+   "specificity": 0.8222222222222222,
+   "precision": 0.7966101694915254,
+   "f1": 0.8138528138528137,
+   "roc_auc": 0.9000327761389709,
+   "tp": 94,
+   "fn": 19,
+   "tn": 111,
+   "fp": 24
+  },
+  {
+   "accuracy": 0.8225806451612904,
+   "sensitivity": 0.7433628318584071,
+   "specificity": 0.8888888888888888,
+   "precision": 0.8484848484848485,
+   "f1": 0.7924528301886794,
+   "roc_auc": 0.8997705670272043,
+   "tp": 84,
+   "fn": 29,
+   "tn": 120,
+   "fp": 15
+  },
+  {
+   "accuracy": 0.8145161290322581,
+   "sensitivity": 0.7256637168141593,
+   "specificity": 0.8888888888888888,
+   "precision": 0.845360824742268,
+   "f1": 0.780952380952381,
+   "roc_auc": 0.8985906260242543,
+   "tp": 82,
+   "fn": 31,
+   "tn": 120,
+   "fp": 15
+  },
+  {
+   "accuracy": 0.8387096774193549,
+   "sensitivity": 0.7699115044247787,
+   "specificity": 0.8962962962962963,
+   "precision": 0.8613861386138614,
+   "f1": 0.8130841121495327,
+   "roc_auc": 0.911504424778761,
+   "tp": 87,
+   "fn": 26,
+   "tn": 121,
+   "fp": 14
+  },
+  {
+   "accuracy": 0.8306451612903226,
+   "sensitivity": 0.7787610619469026,
+   "specificity": 0.8740740740740741,
+   "precision": 0.8380952380952381,
+   "f1": 0.8073394495412844,
+   "roc_auc": 0.8846279908226811,
+   "tp": 88,
+   "fn": 25,
+   "tn": 118,
+   "fp": 17
+  }
+ ],
+ "child_level": {
+  "accuracy": 0.8554216867469879,
+  "sensitivity": 0.868421052631579,
+  "specificity": 0.8444444444444444,
+  "precision": 0.825,
+  "f1": 0.8461538461538461,
+  "roc_auc": 0.9292397660818713,
+  "tp": 33,
+  "fn": 5,
+  "tn": 38,
+  "fp": 7
+ },
+ "errors": [
+  {
+   "file": "PD (107).jpg",
+   "child": "PD36",
+   "sentence": 2,
+   "label": 1,
+   "prob": 0.286
+  },
+  {
+   "file": "PD (11).jpg",
+   "child": "PD04",
+   "sentence": 2,
+   "label": 1,
+   "prob": 0.129
+  },
+  {
+   "file": "PD (110).jpg",
+   "child": "PD37",
+   "sentence": 2,
+   "label": 1,
+   "prob": 0.369
+  },
+  {
+   "file": "PD (14).jpg",
+   "child": "PD05",
+   "sentence": 2,
+   "label": 1,
+   "prob": 0.381
+  },
+  {
+   "file": "PD (23).jpg",
+   "child": "PD08",
+   "sentence": 2,
+   "label": 1,
+   "prob": 0.418
+  },
+  {
+   "file": "PD (24).jpg",
+   "child": "PD08",
+   "sentence": 3,
+   "label": 1,
+   "prob": 0.41
+  },
+  {
+   "file": "PD (27).jpg",
+   "child": "PD09",
+   "sentence": 3,
+   "label": 1,
+   "prob": 0.287
+  },
+  {
+   "file": "PD (49).jpg",
+   "child": "PD17",
+   "sentence": 1,
+   "label": 1,
+   "prob": 0.066
+  },
+  {
+   "file": "PD (50).jpg",
+   "child": "PD17",
+   "sentence": 2,
+   "label": 1,
+   "prob": 0.179
+  },
+  {
+   "file": "PD (51).jpg",
+   "child": "PD17",
+   "sentence": 3,
+   "label": 1,
+   "prob": 0.185
+  },
+  {
+   "file": "PD (56).jpg",
+   "child": "PD19",
+   "sentence": 2,
+   "label": 1,
+   "prob": 0.407
+  },
+  {
+   "file": "PD (57).jpg",
+   "child": "PD19",
+   "sentence": 3,
+   "label": 1,
+   "prob": 0.239
+  },
+  {
+   "file": "PD (60).jpg",
+   "child": "PD20",
+   "sentence": 3,
+   "label": 1,
+   "prob": 0.104
+  },
+  {
+   "file": "PD (67).jpg",
+   "child": "PD23",
+   "sentence": 1,
+   "label": 1,
+   "prob": 0.012
+  },
+  {
+   "file": "PD (69).jpg",
+   "child": "PD23",
+   "sentence": 3,
+   "label": 1,
+   "prob": 0.248
+  },
+  {
+   "file": "PD (78).jpg",
+   "child": "PD26",
+   "sentence": 3,
+   "label": 1,
+   "prob": 0.393
+  },
+  {
+   "file": "PD (88).jpg",
+   "child": "PD30",
+   "sentence": 1,
+   "label": 1,
+   "prob": 0.005
+  },
+  {
+   "file": "PD (89).jpg",
+   "child": "PD30",
+   "sentence": 2,
+   "label": 1,
+   "prob": 0.192
+  },
+  {
+   "file": "PD (90).jpg",
+   "child": "PD30",
+   "sentence": 3,
+   "label": 1,
+   "prob": 0.262
+  },
+  {
+   "file": "LPD (100).jpg",
+   "child": "LPD34",
+   "sentence": 1,
+   "label": 0,
+   "prob": 0.698
+  },
+  {
+   "file": "LPD (13).jpg",
+   "child": "LPD05",
+   "sentence": 1,
+   "label": 0,
+   "prob": 0.857
+  },
+  {
+   "file": "LPD (133).jpg",
+   "child": "LPD45",
+   "sentence": 1,
+   "label": 0,
+   "prob": 0.709
+  },
+  {
+   "file": "LPD (134).jpg",
+   "child": "LPD45",
+   "sentence": 2,
+   "label": 0,
+   "prob": 0.826
+  },
+  {
+   "file": "LPD (135).jpg",
+   "child": "LPD45",
+   "sentence": 3,
+   "label": 0,
+   "prob": 0.808
+  },
+  {
+   "file": "LPD (15).jpg",
+   "child": "LPD05",
+   "sentence": 3,
+   "label": 0,
+   "prob": 0.842
+  },
+  {
+   "file": "LPD (22).jpg",
+   "child": "LPD08",
+   "sentence": 1,
+   "label": 0,
+   "prob": 0.838
+  },
+  {
+   "file": "LPD (28).jpg",
+   "child": "LPD10",
+   "sentence": 1,
+   "label": 0,
+   "prob": 0.659
+  },
+  {
+   "file": "LPD (29).jpg",
+   "child": "LPD10",
+   "sentence": 2,
+   "label": 0,
+   "prob": 0.845
+  },
+  {
+   "file": "LPD (30).jpg",
+   "child": "LPD10",
+   "sentence": 3,
+   "label": 0,
+   "prob": 0.547
+  },
+  {
+   "file": "LPD (31).jpg",
+   "child": "LPD11",
+   "sentence": 1,
+   "label": 0,
+   "prob": 0.625
+  },
+  {
+   "file": "LPD (32).jpg",
+   "child": "LPD11",
+   "sentence": 2,
+   "label": 0,
+   "prob": 0.569
+  },
+  {
+   "file": "LPD (43).jpg",
+   "child": "LPD15",
+   "sentence": 1,
+   "label": 0,
+   "prob": 0.537
+  },
+  {
+   "file": "LPD (46).jpg",
+   "child": "LPD16",
+   "sentence": 1,
+   "label": 0,
+   "prob": 0.73
+  },
+  {
+   "file": "LPD (47).jpg",
+   "child": "LPD16",
+   "sentence": 2,
+   "label": 0,
+   "prob": 0.543
+  },
+  {
+   "file": "LPD (52).jpg",
+   "child": "LPD18",
+   "sentence": 1,
+   "label": 0,
+   "prob": 0.759
+  },
+  {
+   "file": "LPD (56).jpg",
+   "child": "LPD19",
+   "sentence": 2,
+   "label": 0,
+   "prob": 0.805
+  },
+  {
+   "file": "LPD (58).jpg",
+   "child": "LPD20",
+   "sentence": 1,
+   "label": 0,
+   "prob": 0.554
+  },
+  {
+   "file": "LPD (88).jpg",
+   "child": "LPD30",
+   "sentence": 1,
+   "label": 0,
+   "prob": 0.838
+  },
+  {
+   "file": "LPD (89).jpg",
+   "child": "LPD30",
+   "sentence": 2,
+   "label": 0,
+   "prob": 0.99
+  },
+  {
+   "file": "LPD (90).jpg",
+   "child": "LPD30",
+   "sentence": 3,
+   "label": 0,
+   "prob": 0.952
+  },
+  {
+   "file": "LPD (96).jpg",
+   "child": "LPD32",
+   "sentence": 3,
+   "label": 0,
+   "prob": 0.508
+  },
+  {
+   "file": "LPD (98).jpg",
+   "child": "LPD33",
+   "sentence": 2,
+   "label": 0,
+   "prob": 0.558
+  },
+  {
+   "file": "LPD (99).jpg",
+   "child": "LPD33",
+   "sentence": 3,
+   "label": 0,
+   "prob": 0.878
+  }
+ ],
+ "accuracy_by_sentence": {
+  "1": 0.8313253012048193,
+  "2": 0.8192771084337349,
+  "3": 0.8292682926829268
+ }
+}

@@ -1,0 +1,16 @@
+{$DOMAIN} {
+	encode gzip
+
+	# Slightly above the app's upload limit so the backend can answer with a clear 413.
+	request_body {
+		max_size {$MAX_BODY}
+	}
+
+	# Video analysis can take a few minutes on a small VM.
+	reverse_proxy app:7860 {
+		transport http {
+			read_timeout 30m
+			write_timeout 30m
+		}
+	}
+}

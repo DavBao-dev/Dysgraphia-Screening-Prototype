@@ -1,4 +1,5 @@
 # Docker image for a Hugging Face Space (SDK: docker, app_port: 7860).
+# deploy/oracle/docker-compose.yml builds the same image for a plain VM.
 #
 # The Space repository only needs this file and README.md (with the YAML header). The image
 # clones this GitHub repository at REPO_REF, builds the Next.js frontend in standalone mode
@@ -14,10 +15,13 @@ ARG REPO_REF=main
 ARG MAX_VIDEO_MB=200
 
 # ---------------------------------------------------------------- source
-FROM alpine/git:2.47.2 AS source
+FROM debian:bookworm-slim AS source
 ARG REPO_URL
 ARG REPO_REF
-RUN git clone --depth 1 --branch "${REPO_REF}" "${REPO_URL}" /src
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git ca-certificates \
+ && rm -rf /var/lib/apt/lists/* \
+ && git clone --depth 1 --branch "${REPO_REF}" "${REPO_URL}" /src
 
 # ---------------------------------------------------------------- frontend build
 FROM node:22-bookworm-slim AS frontend

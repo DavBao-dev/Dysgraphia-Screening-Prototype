@@ -1,0 +1,37 @@
+# Production stack for a single VM (Oracle Cloud Always Free, Ubuntu, x86_64 or ARM).
+#   app   : the same image as the Hugging Face Space (FastAPI + Next.js on :7860)
+#   caddy : HTTPS reverse proxy with an automatic Let's Encrypt certificate for $DOMAIN
+# Run from this folder:  DOMAIN=1-2-3-4.sslip.io docker compose up -d --build
+services:
+  app:
+    build:
+      context: ../huggingface
+      args:
+        REPO_REF: ${REPO_REF:-main}
+        MAX_VIDEO_MB: ${MAX_VIDEO_MB:-200}
+    restart: unless-stopped
+    volumes:
+      - app-data:/app/data
+    expose:
+      - "7860"
+
+  caddy:
+    image: caddy:2.10
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN, e.g. 1-2-3-4.sslip.io}
+      MAX_BODY: ${MAX_BODY:-250MB}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  app-data:
+  caddy-data:
+  caddy-config:

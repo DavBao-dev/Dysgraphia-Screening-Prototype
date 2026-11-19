@@ -117,6 +117,19 @@ To ship a new version, push to `main` and use **Settings → Factory rebuild** o
 
 The demo server is public: anyone can open the history page, and sessions are lost when the Space restarts. Do not upload real children's data there.
 
+## Deployment (any Linux VM, e.g. Oracle Cloud Always Free)
+
+Docker Spaces need a paid Hugging Face plan, so the same image can also run on a plain VM. `deploy/oracle/` contains a Docker Compose stack: the app image plus [Caddy](https://caddyserver.com/), which gets a Let's Encrypt certificate automatically. Without a domain of your own, it uses `<public-ip-with-dashes>.sslip.io`.
+
+1. Create an Ubuntu VM (on Oracle Cloud: shape `VM.Standard.A1.Flex`, at least 2 OCPU and 12 GB RAM) with a public IP, and allow TCP 80 and 443 in its security list.
+2. SSH into it and run:
+
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/DavBao-dev/Dysgraphia-Screening-Prototype/main/deploy/oracle/setup.sh | bash
+   ```
+
+   The script installs Docker, opens ports 80/443 in the VM firewall, clones the repository, builds the image and prints the HTTPS address. Run it again to deploy the latest `main`.
+
 ## Privacy and responsible use
 
 - The app is meant to be used with the consent of the child's parent or guardian.

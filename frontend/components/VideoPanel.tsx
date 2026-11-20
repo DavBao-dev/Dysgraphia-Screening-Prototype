@@ -2,6 +2,7 @@
 
 import Dropzone, { type DropzoneValue } from "./Dropzone";
 import LiveCamera, { type LiveData } from "./LiveCamera";
+import { UploadIcon, VideoIcon } from "./Icons";
 import { MIN_LIVE_FRAMES } from "@/lib/constants";
 
 interface VideoPanelProps {
@@ -13,6 +14,11 @@ interface VideoPanelProps {
   onLiveData: (data: LiveData | null) => void;
   onRetake?: () => void;
 }
+
+const MODES = [
+  { id: "video" as const, label: "Tải video có sẵn", icon: UploadIcon },
+  { id: "live" as const, label: "Quay bằng camera", icon: VideoIcon },
+];
 
 export default function VideoPanel({
   mode,
@@ -27,19 +33,25 @@ export default function VideoPanel({
 
   return (
     <div>
-      <div className="inline-flex flex-wrap rounded-lg bg-surface-2 p-1">
-        {(["video", "live"] as const).map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => onModeChange(m)}
-            className={`rounded-md px-4 py-2 text-sm font-medium ${
-              mode === m ? "bg-surface text-text" : "text-muted hover:text-text"
-            }`}
-          >
-            {m === "video" ? "Tải video lên" : "Camera trực tiếp"}
-          </button>
-        ))}
+      <div role="tablist" aria-label="Cách cung cấp video" className="grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1 sm:inline-grid">
+        {MODES.map(({ id, label, icon: Icon }) => {
+          const active = mode === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => onModeChange(id)}
+              className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-[15px] font-medium transition-colors ${
+                active ? "bg-surface text-accent-2 shadow-sm" : "text-muted hover:text-text"
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       <div className="mt-4">
@@ -54,8 +66,8 @@ export default function VideoPanel({
           <div>
             <LiveCamera onResult={(data) => onLiveData(data)} onRetake={onRetake} />
             {frameCount > 0 && frameCount < MIN_LIVE_FRAMES && (
-              <p className="mt-3 text-sm text-amber">
-                Cần ít nhất {MIN_LIVE_FRAMES} khung hình có bàn tay. Ghi thêm một chút nữa nhé.
+              <p className="mt-3 text-[15px] text-amber">
+                Chưa đủ hình ảnh bàn tay. Hãy quay thêm một chút nữa nhé.
               </p>
             )}
           </div>

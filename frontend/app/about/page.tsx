@@ -1,97 +1,161 @@
 import Link from "next/link";
 import DetailsSection from "@/components/DetailsSection";
+import {
+  ArrowRightIcon,
+  CheckCircleIcon,
+  EyeIcon,
+  ImageIcon,
+  InfoIcon,
+  ShieldIcon,
+  VideoIcon,
+} from "@/components/Icons";
+
+const VIDEO_STEPS = [
+  "Cho trẻ ngồi viết như bình thường, với giấy và bút quen thuộc.",
+  "Đặt điện thoại phía trên bàn (có thể kê lên chồng sách), camera hướng xuống tay và trang giấy.",
+  "Bật quay, để trẻ chép một đoạn ngắn trong khoảng 15–30 giây.",
+  "Tải video lên ở Bước 2 của trang Kiểm tra. Hoặc chọn “Quay bằng camera” để quay ngay trên máy tính.",
+];
+
+const VIDEO_DONT = [
+  "Không quay ngược sáng hoặc nơi quá tối",
+  "Không để tay người khác che mất bàn tay trẻ",
+  "Không cần quay khuôn mặt của trẻ",
+];
+
+const PHOTO_STEPS = [
+  "Chụp thẳng từ trên xuống trang vở trẻ vừa viết, không nghiêng.",
+  "Chụp khoảng 2–3 dòng chữ trẻ tự viết.",
+  "Chụp nơi đủ sáng, không có bóng tay hay bóng điện thoại đè lên chữ.",
+];
+
+function Section({ id, icon: Icon, title, children }: { id?: string; icon: typeof InfoIcon; title: string; children: React.ReactNode }) {
+  return (
+    <section id={id} className="scroll-mt-24 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+      <div className="flex items-center gap-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-accent-2">
+          <Icon className="h-5 w-5" />
+        </span>
+        <h2 className="text-xl font-semibold text-text">{title}</h2>
+      </div>
+      <div className="mt-4 text-base leading-relaxed text-muted">{children}</div>
+    </section>
+  );
+}
 
 export default function AboutPage() {
   return (
-    <main className="mx-auto w-full max-w-[960px] flex-1 px-6 py-10">
-      <h1 className="text-3xl font-bold tracking-tight text-text">Giới thiệu</h1>
-      <p className="mt-2 text-sm text-muted">
-        Nguyên mẫu này khám phá cách AI có thể giúp nhận diện các mẫu chữ viết
-        và chuyển động tay có thể hữu ích cho việc sàng lọc chứng khó viết
-        (dysgraphia).
-      </p>
-      <p className="mt-3 text-sm text-muted">
-        Công cụ này chỉ dành cho mục đích <strong>sàng lọc và nghiên cứu</strong>,
-        không thay thế việc đánh giá của các chuyên gia có trình độ.
+    <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+      <h1 className="text-3xl font-bold tracking-tight text-text">Hướng dẫn sử dụng</h1>
+      <p className="mt-2 text-lg leading-relaxed text-muted">
+        Những điều cần biết để kiểm tra đúng cách và hiểu đúng kết quả.
       </p>
 
-      <section className="mt-6 rounded-xl border border-border bg-surface p-5">
-        <h2 className="text-base font-semibold text-text">Nguyên tắc hoạt động</h2>
-        <p className="mt-1 text-sm text-muted">
-          Một bài sàng lọc gồm phân tích chuyển động tay (bắt buộc) và phân tích
-          chữ viết tay (tùy chọn). Hệ thống tổng hợp các tín hiệu và đưa ra kết
-          quả sàng lọc mang tính tham khảo.
-        </p>
-      </section>
-
-      <div className="mt-4 space-y-4">
-        <DetailsSection title="Chi tiết kỹ thuật — Chuyển động tay">
-          <p className="text-sm text-muted">
-            Phân tích chuyển động tay từ video hoặc camera trực tiếp sử dụng{" "}
-            <strong>MediaPipe Hands</strong> để phát hiện 21 điểm mốc bàn tay
-            trên mỗi frame, trích xuất <strong>28 đặc trưng vận động học</strong>,
-            sau đó đưa vào bộ phân loại <strong>Random Forest</strong> để đưa ra
-            dự đoán. Đầu ra là tín hiệu nhị phân: cao hơn / thấp.
+      <div className="mt-8 space-y-5">
+        <Section icon={InfoIcon} title="Khó viết là gì?">
+          <p>
+            Khó viết (dysgraphia) là khi trẻ gặp khó khăn kéo dài trong việc viết tay: chữ khó đọc, viết rất chậm, cầm
+            bút khó khăn hoặc nhanh mỏi tay, dù đã được hướng dẫn và luyện tập. Khó viết{" "}
+            <strong className="text-text">không liên quan đến trí thông minh</strong>, và kỹ năng viết có thể cải thiện
+            khi trẻ được hỗ trợ đúng cách.
           </p>
-          <ul className="mt-3 space-y-1 text-sm text-text">
-            <li>
-              <span className="text-muted">Nguồn dữ liệu:</span> Video (mp4, mov,
-              avi) hoặc landmarks từ camera trực tiếp
-            </li>
-            <li>
-              <span className="text-muted">Đặc trưng:</span> MediaPipe Hands
-              landmarks + 28 đặc trưng vận động học
-            </li>
-            <li>
-              <span className="text-muted">Mô hình phân loại:</span> Random
-              Forest
-            </li>
+          <p className="mt-3">
+            Công cụ này giúp giáo viên và phụ huynh nhận biết sớm những trẻ nên được quan sát thêm. Nó{" "}
+            <strong className="text-text">không thay thế</strong> việc đánh giá của chuyên gia.
+          </p>
+        </Section>
+
+        <Section id="cach-quay" icon={VideoIcon} title="Cách quay video bàn tay">
+          <ol className="space-y-2.5">
+            {VIDEO_STEPS.map((step, i) => (
+              <li key={step} className="flex items-start gap-3 text-text">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-white">
+                  {i + 1}
+                </span>
+                {step}
+              </li>
+            ))}
+          </ol>
+          <div className="mt-5 rounded-xl bg-surface-2 p-4">
+            <p className="text-sm font-semibold text-text">Nên tránh</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-[15px]">
+              {VIDEO_DONT.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </Section>
+
+        <Section icon={ImageIcon} title="Cách chụp ảnh chữ viết (không bắt buộc)">
+          <ul className="list-disc space-y-1.5 pl-5">
+            {PHOTO_STEPS.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
           </ul>
-        </DetailsSection>
+        </Section>
 
-        <DetailsSection title="Chi tiết kỹ thuật — Chữ viết tay">
-          <p className="text-sm text-muted">
-            Phân tích ảnh chữ viết tay sử dụng backbone ResNet50 để trích xuất
-            đặc trưng hình ảnh, kết hợp hai đặc trưng thủ công (độ dày mực và
-            độ lệch đường cơ sở) đưa vào mạng MLP classifier chạy trên OpenVINO.
-          </p>
-          <ul className="mt-3 space-y-1 text-sm text-text">
+        <Section icon={CheckCircleIcon} title="Hiểu kết quả">
+          <div className="space-y-3">
+            <div className="flex items-start gap-3 rounded-xl border border-green/30 bg-green-soft p-4">
+              <CheckCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-green" />
+              <p>
+                <strong className="text-text">Chưa thấy dấu hiệu đáng lo:</strong> ở lần kiểm tra này, cách viết của trẻ
+                chưa cho thấy dấu hiệu rõ rệt. Nếu bạn vẫn thấy trẻ gặp khó khăn kéo dài, hãy kiểm tra lại sau hoặc
+                trao đổi với giáo viên.
+              </p>
+            </div>
+            <div className="flex items-start gap-3 rounded-xl border border-accent/30 bg-accent-soft p-4">
+              <EyeIcon className="mt-0.5 h-5 w-5 shrink-0 text-accent-2" />
+              <p>
+                <strong className="text-text">Nên theo dõi thêm:</strong> hệ thống thấy một vài dấu hiệu có thể liên quan
+                đến khó viết. Điều này không có nghĩa là trẻ bị khó viết. Hãy quan sát thêm và, nếu cần, đưa trẻ gặp
+                chuyên gia để được đánh giá.
+              </p>
+            </div>
+          </div>
+        </Section>
+
+        <Section icon={ShieldIcon} title="Giới hạn và quyền riêng tư">
+          <ul className="list-disc space-y-1.5 pl-5">
+            <li>Kết quả là gợi ý sàng lọc, có thể bỏ sót hoặc báo nhầm. Chỉ chuyên gia mới có thể chẩn đoán.</li>
             <li>
-              <span className="text-muted">Nguồn dữ liệu:</span> Ảnh PNG/JPG chữ
-              viết tay
+              Mô hình chữ viết hiện được huấn luyện trên chữ viết của học sinh Malaysia; độ chính xác với chữ tiếng Việt
+              đang được tiếp tục kiểm tra.
             </li>
-            <li>
-              <span className="text-muted">Đặc trưng:</span> ResNet50 embedding +
-              ink_thickness_mean + baseline_deviation
-            </li>
-            <li>
-              <span className="text-muted">Mô hình phân loại:</span> MLP
-              (OpenVINO)
-            </li>
+            <li>Video và ảnh không được lưu lại sau khi phân tích. Hệ thống chỉ lưu kết quả kèm mã học sinh bạn nhập.</li>
+            <li>Không nhập họ tên đầy đủ hay thông tin nhận dạng của trẻ.</li>
           </ul>
-        </DetailsSection>
 
-        <DetailsSection title="Chi tiết kỹ thuật — Kết hợp kết quả">
-          <p className="text-sm text-muted">
-            Kết quả bỏ phiếu đa số giữa phân tích chuyển động tay và phân tích
-            chữ viết tay. Nếu chỉ có một nguồn hoạt động, kết quả trực tiếp từ
-            nguồn đó được sử dụng.
-          </p>
-        </DetailsSection>
+          <DetailsSection title="Thông tin kỹ thuật (dành cho chuyên môn)">
+            <p>
+              <strong className="text-text">Chuyển động tay:</strong> MediaPipe Hands nhận diện 21 điểm trên bàn tay ở
+              mỗi khung hình; hệ thống tính 18 đặc trưng vận động (tốc độ, gia tốc, độ giật, tỉ lệ dừng bút, run tay
+              3–8 Hz, khoảng cách ngón cái – ngón trỏ…) rồi đưa vào mô hình Random Forest. Tay đứng yên hoặc nắm chặt sẽ
+              bị loại để tránh kết quả sai.
+            </p>
+            <p className="mt-2">
+              <strong className="text-text">Chữ viết:</strong> ảnh được nhị phân hoá và đưa về dạng mực đen trên nền
+              trắng, sau đó ResNet50 trích đặc trưng hình ảnh, ghép với độ dày nét mực và độ lệch dòng, rồi đưa vào mạng
+              MLP (chạy bằng ONNX Runtime). Kiểm định chéo theo học sinh trên 83 học sinh (bộ dữ liệu Mendeley,
+              Malaysia): độ chính xác khoảng 83%, ROC-AUC 0,90.
+            </p>
+            <p className="mt-2">
+              <strong className="text-text">Kết hợp:</strong> hai kết quả được biểu quyết; nếu khác nhau thì lấy trung
+              bình xác suất với ngưỡng 50%. Không có ảnh thì dùng kết quả chuyển động tay.
+            </p>
+          </DetailsSection>
+        </Section>
       </div>
 
-      <div className="mt-6 rounded-xl border border-border bg-surface p-4">
-        <h2 className="text-sm font-semibold text-text">Lưu ý</h2>
-        <p className="mt-1 text-sm text-muted">
-          Kết quả sàng lọc, không phải chẩn đoán y tế.
-        </p>
-      </div>
-
-      <div className="mt-6">
-        <Link href="/screening" className="text-sm text-accent hover:underline">
-          ← Bắt đầu sàng lọc mới
+      <div className="mt-8 flex justify-center">
+        <Link
+          href="/screening"
+          className="inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3.5 text-base font-semibold text-white hover:bg-accent-2"
+        >
+          Bắt đầu kiểm tra
+          <ArrowRightIcon className="h-5 w-5" />
         </Link>
       </div>
-    </main>
+    </div>
   );
 }

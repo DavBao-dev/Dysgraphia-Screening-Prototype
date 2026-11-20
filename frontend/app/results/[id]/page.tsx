@@ -5,7 +5,15 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import ModelCard from "@/components/ModelCard";
-import DetailsSection from "@/components/DetailsSection";
+import {
+  ArrowLeftIcon,
+  CheckCircleIcon,
+  EyeIcon,
+  ImageIcon,
+  InfoIcon,
+  PrinterIcon,
+  VideoIcon,
+} from "@/components/Icons";
 import { getSession } from "@/lib/api";
 import type { ApiError } from "@/lib/api";
 import type { SessionDetail } from "@/types/screening";
@@ -22,6 +30,61 @@ function formatDate(raw: string): string {
   } catch {
     return raw;
   }
+}
+
+interface Verdict {
+  title: string;
+  summary: string;
+  steps: string[];
+  tone: string;
+  iconTone: string;
+  icon: typeof CheckCircleIcon;
+}
+
+function verdictFor(prediction: number | null | undefined): Verdict {
+  if (prediction === 1) {
+    return {
+      title: "Nên theo dõi thêm",
+      summary:
+        "Hệ thống thấy một vài dấu hiệu có thể liên quan đến khó viết. Điều này không có nghĩa là trẻ bị khó viết, nhưng trẻ nên được quan sát kỹ hơn.",
+      steps: [
+        "Trao đổi giữa giáo viên và phụ huynh về việc viết của trẻ ở lớp và ở nhà.",
+        "Quan sát thêm trong 2–4 tuần: cách cầm bút, tốc độ viết, chữ có lệch dòng không, trẻ có hay kêu mỏi tay không.",
+        "Nếu các dấu hiệu kéo dài, hãy đưa trẻ gặp chuyên gia để được đánh giá: chuyên viên tâm lý học đường, chuyên viên hoạt động trị liệu hoặc bác sĩ nhi khoa phát triển.",
+        "Khó viết không liên quan đến trí thông minh. Phát hiện sớm giúp trẻ được hỗ trợ kịp thời.",
+      ],
+      tone: "border-accent/30 bg-accent-soft",
+      iconTone: "bg-accent text-white",
+      icon: EyeIcon,
+    };
+  }
+  if (prediction === 0) {
+    return {
+      title: "Chưa thấy dấu hiệu đáng lo",
+      summary:
+        "Ở lần kiểm tra này, cách viết của trẻ chưa cho thấy dấu hiệu khó viết rõ rệt.",
+      steps: [
+        "Tiếp tục khuyến khích trẻ viết đều đặn mỗi ngày.",
+        "Nếu trẻ vẫn gặp khó khăn kéo dài (viết rất chậm, chữ khó đọc, hay mỏi tay), hãy kiểm tra lại sau vài tuần hoặc trao đổi với giáo viên.",
+        "Một lần kiểm tra không thể phát hiện mọi trường hợp. Sự quan sát của giáo viên và phụ huynh vẫn quan trọng nhất.",
+      ],
+      tone: "border-green/30 bg-green-soft",
+      iconTone: "bg-green text-white",
+      icon: CheckCircleIcon,
+    };
+  }
+  return {
+    title: "Chưa đủ thông tin",
+    summary: "Hệ thống chưa có đủ dữ liệu để đưa ra kết quả. Hãy thử kiểm tra lại với một video rõ hơn.",
+    steps: ["Xem lại phần “Cách quay video” và thực hiện kiểm tra mới."],
+    tone: "border-border bg-surface-2",
+    iconTone: "bg-muted text-white",
+    icon: InfoIcon,
+  };
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10">{children}</div>;
 }
 
 export default function ResultsPage() {
@@ -43,111 +106,126 @@ export default function ResultsPage() {
       })
       .catch((e: ApiError) => {
         if (!cancelled) {
-          if (e.status === 404) {
-            setError("Không tìm thấy phiên sàng lọc.");
-          } else {
-            setError("Không thể tải kết quả sàng lọc.");
-          }
+          setError(e.status === 404 ? "Không tìm thấy kết quả này." : "Không thể tải kết quả. Vui lòng thử lại.");
           setLoading(false);
         }
       });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   if (loading) {
     return (
-      <main className="mx-auto w-full max-w-[960px] flex-1 px-6 py-10">
-        <p className="text-sm text-muted">Đang tải kết quả…</p>
-      </main>
+      <Shell>
+        <p className="text-base text-muted">Đang tải kết quả…</p>
+      </Shell>
     );
   }
 
-  if (error) {
+  if (error || !data) {
     return (
-      <main className="mx-auto w-full max-w-[960px] flex-1 px-6 py-10">
-        <p className="text-sm text-red">{error}</p>
-        <Link href="/history" className="mt-4 inline-block text-sm text-accent hover:underline">
-          ← Về lịch sử
+      <Shell>
+        <p className="text-base text-red">{error ?? "Không thể tải kết quả."}</p>
+        <Link href="/history" className="mt-4 inline-block text-[15px] font-medium text-accent-2 hover:underline">
+          ← Về danh sách kết quả
         </Link>
-      </main>
+      </Shell>
     );
   }
 
-  if (!data) return null;
-
-  const ensemble = data.ensemble;
   const modelA = data.model_a;
   const modelB = data.model_b;
-
-  const prediction = ensemble?.prediction;
-  const verdict = (() => {
-    if (prediction === 1) {
-      return {
-        primary: "Có dấu hiệu cần được xem xét thêm",
-        detail:
-          "Hệ thống phát hiện các mẫu có thể liên quan đến khó viết và khuyến nghị xem xét thêm.",
-        descriptor: "Tín hiệu sàng lọc cao hơn",
-        bg: "border-amber/30 bg-amber/10",
-        textColor: "text-amber",
-      };
-    }
-    if (prediction === 0) {
-      return {
-        primary: "Chưa phát hiện dấu hiệu đáng chú ý",
-        detail: "Kết quả sàng lọc hiện chưa cho thấy tín hiệu nổi bật.",
-        descriptor: "Tín hiệu sàng lọc thấp",
-        bg: "border-green/30 bg-green/10",
-        textColor: "text-green",
-      };
-    }
-    return {
-      primary: "Cần đánh giá thêm",
-      detail: "Chưa đủ dữ liệu để tổng hợp kết quả.",
-      descriptor: null,
-      bg: "border-violet/30 bg-violet/10",
-      textColor: "text-violet",
-    };
-  })();
+  const verdict = verdictFor(data.ensemble?.prediction);
+  const VerdictIcon = verdict.icon;
 
   return (
-    <main className="mx-auto w-full max-w-[960px] flex-1 px-6 py-10">
-      <Link href="/history" className="mb-4 inline-block text-sm text-accent hover:underline">
-        ← Lịch sử sàng lọc
+    <Shell>
+      <Link
+        href="/history"
+        className="inline-flex items-center gap-1.5 text-[15px] font-medium text-accent-2 hover:underline print:hidden"
+      >
+        <ArrowLeftIcon className="h-4 w-4" />
+        Kết quả đã lưu
       </Link>
 
-      <h1 className="text-3xl font-bold tracking-tight text-text">Kết quả sàng lọc</h1>
-      <p className="mt-1 text-sm text-muted">Học sinh: {data.patient_id}</p>
-      <p className="text-sm text-muted">Thời điểm: {formatDate(data.created_at)}</p>
-
-      <div className={`mt-6 rounded-xl border p-5 ${verdict.bg}`}>
-        <p className={`text-xl font-semibold ${verdict.textColor}`}>{verdict.primary}</p>
-        <p className="mt-1.5 text-sm text-muted">{verdict.detail}</p>
-        {verdict.descriptor && (
-          <p className="mt-2 text-xs text-muted">{verdict.descriptor}</p>
-        )}
-        <p className="mt-3 border-t border-border/40 pt-3 text-xs text-muted">
-          Đây là công cụ sàng lọc, không phải chẩn đoán.
-        </p>
+      <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-text">Kết quả kiểm tra</h1>
+          <p className="mt-1.5 text-base text-muted">
+            Mã học sinh: <span className="font-semibold text-text">{data.patient_id}</span>
+            <span className="mx-2" aria-hidden="true">·</span>
+            {formatDate(data.created_at)}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 print:hidden">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-[15px] font-semibold text-text hover:bg-surface-2"
+          >
+            <PrinterIcon className="h-4 w-4" />
+            In kết quả
+          </button>
+          <Link
+            href="/screening"
+            className="inline-flex items-center rounded-xl bg-accent px-4 py-2.5 text-[15px] font-semibold text-white hover:bg-accent-2"
+          >
+            Kiểm tra lần mới
+          </Link>
+        </div>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+      {/* Main verdict */}
+      <section className={`mt-6 rounded-2xl border p-6 ${verdict.tone}`} aria-labelledby="verdict-title">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+          <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${verdict.iconTone}`}>
+            <VerdictIcon className="h-6 w-6" />
+          </span>
+          <div>
+            <h2 id="verdict-title" className="text-2xl font-bold text-text">
+              {verdict.title}
+            </h2>
+            <p className="mt-2 text-lg leading-relaxed text-text">{verdict.summary}</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Next steps */}
+      <section className="mt-5 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+        <h2 className="text-xl font-semibold text-text">Nên làm gì tiếp theo?</h2>
+        <ol className="mt-4 space-y-3">
+          {verdict.steps.map((step, i) => (
+            <li key={step} className="flex items-start gap-3 text-base leading-relaxed text-text">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-2 text-sm font-semibold text-muted">
+                {i + 1}
+              </span>
+              {step}
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* What was analysed */}
+      <h2 className="mt-8 text-xl font-semibold text-text">Hệ thống đã xem những gì?</h2>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <ModelCard
           title="Chuyển động tay"
-          badge="Bắt buộc"
-          badgeVariant="accent"
+          icon={VideoIcon}
+          lookedAt="Tốc độ và độ mượt khi viết, những lần dừng bút và độ run của bàn tay."
           available={modelA?.available ?? false}
           prediction={modelA?.prediction ?? null}
           score={modelA?.score ?? null}
           quality={modelA?.quality ?? null}
           features={modelA?.features ?? null}
-          technicalName="Random Forest (28 đặc trưng từ MediaPipe Hands)"
-          unavailableText="Chưa có dữ liệu chuyển động tay."
+          technicalName="MediaPipe Hands (21 điểm trên bàn tay) + Random Forest, 18 đặc trưng vận động"
+          unavailableText="Không có dữ liệu chuyển động tay."
         />
         <ModelCard
-          title="Chữ viết tay"
-          badge="Tùy chọn"
-          badgeVariant="neutral"
+          title="Chữ viết"
+          icon={ImageIcon}
+          lookedAt="Hình dạng chữ, độ đậm của nét và chữ có thẳng hàng theo dòng hay không."
           available={modelB?.available ?? false}
           prediction={modelB?.prediction ?? null}
           score={modelB?.score ?? null}
@@ -159,49 +237,19 @@ export default function ResultsPage() {
                 }
               : null
           }
-          technicalName="ResNet50 + MLP (OpenVINO)"
-          unavailableText="Chưa cung cấp mẫu chữ viết tay."
+          technicalName="ResNet50 + MLP (ONNX Runtime), 2 đặc trưng nét chữ"
+          unavailableText="Lần kiểm tra này không có ảnh chữ viết. Thêm ảnh ở lần sau để kết quả đầy đủ hơn."
         />
       </div>
 
-      <section className="mt-6 rounded-xl border border-border bg-surface p-5">
-        <h2 className="text-base font-semibold text-text">
-          Chúng tôi đã phân tích điều gì?
-        </h2>
-        <div className="mt-3 grid gap-4 sm:grid-cols-2">
-          <div>
-            <h3 className="text-sm font-semibold text-text">Chuyển động tay</h3>
-            <ul className="mt-1.5 list-disc space-y-1 pl-4 text-sm text-muted">
-              <li>Tốc độ chuyển động của bàn tay</li>
-              <li>Độ mượt và nhất quán của chuyển động</li>
-              <li>Các quãng dừng hoặc khựng</li>
-              <li>Các mẫu rung lắc nhẹ (run)</li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-text">Chữ viết tay</h3>
-            <ul className="mt-1.5 list-disc space-y-1 pl-4 text-sm text-muted">
-              <li>Độ dày của nét mực</li>
-              <li>Mức độ thẳng hàng của dòng chữ</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      {ensemble?.method && (
-        <div className="mt-4">
-          <DetailsSection title="Chi tiết kỹ thuật">
-            <p className="text-sm text-muted">
-              Kết quả chung được tổng hợp từ các tín hiệu phía trên (phương thức:{" "}
-              {ensemble.method}).
-            </p>
-          </DetailsSection>
-        </div>
-      )}
-
-      <div className="mt-6 rounded-xl border border-border bg-surface p-4">
-        <p className="text-sm text-muted">{data.disclaimer}</p>
+      <div className="mt-8 flex items-start gap-3 rounded-2xl border border-border bg-surface-2 p-5 text-[15px] leading-relaxed text-muted">
+        <InfoIcon className="mt-0.5 h-5 w-5 shrink-0 text-muted" />
+        <p>
+          <span className="font-semibold text-text">Kết quả này chỉ là gợi ý sàng lọc, không phải chẩn đoán.</span>{" "}
+          Chỉ chuyên gia mới có thể xác định trẻ có bị khó viết hay không. Hãy dùng kết quả này làm cơ sở để trao đổi
+          giữa gia đình, nhà trường và chuyên gia.
+        </p>
       </div>
-    </main>
+    </Shell>
   );
 }

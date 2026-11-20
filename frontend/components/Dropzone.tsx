@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 
 import { MAX_VIDEO_BYTES, MAX_VIDEO_MB, MAX_VIDEO_MSG } from "@/lib/constants";
+import { CheckIcon, UploadIcon } from "./Icons";
 
 export interface DropzoneValue {
   name: string;
@@ -39,7 +40,7 @@ function isVideoFile(name: string): boolean {
 
 export default function Dropzone({ accept, onFile, value, onRemove, title }: DropzoneProps) {
   const isVideoAccept = accept.includes("mp4") || accept.includes("video");
-  const dropTitle = title ?? (isVideoAccept ? "Thả video vào đây" : "Thả ảnh vào đây");
+  const dropTitle = title ?? (isVideoAccept ? "Chọn video từ máy" : "Chọn ảnh từ máy");
   const inputRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<File | null>(null);
   const urlRef = useRef<string | null>(null);
@@ -50,7 +51,7 @@ export default function Dropzone({ accept, onFile, value, onRemove, title }: Dro
 
   function acceptFile(next: File) {
     if (!matchesAccept(next, accept)) {
-      setError("Định dạng tệp không hỗ trợ.");
+      setError(isVideoAccept ? "Tệp này không phải video được hỗ trợ (MP4, MOV, AVI)." : "Tệp này không phải ảnh PNG hoặc JPG.");
       return;
     }
     if (isVideoFile(next.name) && next.size > MAX_VIDEO_BYTES) {
@@ -109,33 +110,25 @@ export default function Dropzone({ accept, onFile, value, onRemove, title }: Dro
       />
 
       {info ? (
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-2 px-4 py-3">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-green/30 bg-green-soft px-4 py-3">
           <div className="flex min-w-0 items-center gap-3">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="h-5 w-5 shrink-0 text-accent"
-              aria-hidden="true"
-            >
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <path d="M14 2v6h6M16 13H8M16 17H8" />
-            </svg>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface text-green">
+              <CheckIcon className="h-5 w-5" />
+            </span>
             <div className="min-w-0">
-              <p className="truncate text-sm text-text">{info.name}</p>
-              <p className="text-xs text-muted">
-                {(info.size / (1024 * 1024)).toFixed(2)} MB
-                {info.duration ? ` • ${info.duration.toFixed(1)}s` : ""}
+              <p className="truncate text-base font-medium text-text">{info.name}</p>
+              <p className="text-sm text-muted">
+                {(info.size / (1024 * 1024)).toFixed(1)} MB
+                {info.duration ? ` · ${Math.round(info.duration)} giây` : ""}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleRemove}
-            className="shrink-0 rounded-md px-2 py-1 text-xs text-red hover:bg-surface"
+            className="shrink-0 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-muted hover:text-text"
           >
-            Xóa
+            Chọn tệp khác
           </button>
         </div>
       ) : (
@@ -169,29 +162,26 @@ export default function Dropzone({ accept, onFile, value, onRemove, title }: Dro
             const next = e.dataTransfer.files?.[0];
             if (next) acceptFile(next);
           }}
-          className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed px-6 py-3 text-center ${
-            drag ? "border-accent bg-surface-2" : "border-border bg-surface"
+          className={`flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed px-6 py-7 text-center transition-colors ${
+            drag ? "border-accent bg-accent-soft" : "border-border bg-surface hover:border-accent/50 hover:bg-accent-soft/50"
           }`}
         >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            className={`h-5 w-5 ${drag ? "text-accent" : "text-muted"}`}
-            aria-hidden="true"
-          >
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M17 8l-5-5-5 5" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M12 3v12" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <p className="text-sm text-text">{dropTitle}</p>
-          <p className="text-sm text-muted">hoặc chọn tệp từ thiết bị của bạn</p>
-          <p className="text-xs text-muted">{isVideoAccept ? `MP4, MOV, AVI, MPEG4 • Tối đa ${MAX_VIDEO_MB} MB` : "PNG, JPG, JPEG"}</p>
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent-soft text-accent">
+            <UploadIcon className="h-5 w-5" />
+          </span>
+          <p className="mt-1 text-base font-semibold text-accent-2">{dropTitle}</p>
+          <p className="text-[15px] text-muted">hoặc kéo thả tệp vào đây</p>
+          <p className="text-sm text-muted">
+            {isVideoAccept ? `Video MP4, MOV, AVI · tối đa ${MAX_VIDEO_MB} MB` : "Ảnh PNG hoặc JPG"}
+          </p>
         </div>
       )}
 
-      {error && <p className="mt-2 text-sm text-red">{error}</p>}
+      {error && (
+        <p role="alert" className="mt-2 text-[15px] text-red">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

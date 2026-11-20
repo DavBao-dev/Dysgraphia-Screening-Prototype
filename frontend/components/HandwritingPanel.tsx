@@ -9,14 +9,12 @@ interface HandwritingPanelProps {
 
 export default function HandwritingPanel({ onFile, value }: HandwritingPanelProps) {
   return (
-    <div>
-      <Dropzone
-        accept=".png,.jpg,.jpeg"
-        title="Thả ảnh chữ viết vào đây"
-        value={value}
-        onFile={(f) => onFile(f)}
-        onRemove={() => onFile(null)}
-      />
-    </div>
+    <Dropzone
+      accept=".png,.jpg,.jpeg"
+      title="Chọn ảnh chụp trang viết"
+      value={value}
+      onFile={(f) => onFile(f)}
+      onRemove={() => onFile(null)}
+    />
   );
 }

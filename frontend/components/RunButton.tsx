@@ -1,19 +1,22 @@
 "use client";
 
+import { ArrowRightIcon } from "./Icons";
+
 interface RunButtonProps {
   disabled: boolean;
   loading: boolean;
   error?: string;
+  hint?: string;
   onClick: () => void;
 }
 
-export default function RunButton({ disabled, loading, error, onClick }: RunButtonProps) {
+export default function RunButton({ disabled, loading, error, hint, onClick }: RunButtonProps) {
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="flex flex-col items-center gap-3 text-center">
       {error && (
         <p
           role="alert"
-          className="w-full max-w-sm rounded-lg border border-red/30 bg-surface-2 px-4 py-3 text-sm text-red"
+          className="w-full max-w-md rounded-xl border border-red/25 bg-red/5 px-4 py-3 text-[15px] text-red"
         >
           {error}
         </p>
@@ -22,15 +25,34 @@ export default function RunButton({ disabled, loading, error, onClick }: RunButt
         type="button"
         onClick={onClick}
         disabled={disabled || loading}
-        className={`w-full max-w-xs rounded-lg border px-6 py-3 text-base font-semibold transition-colors ${
-          disabled || loading
-            ? "cursor-not-allowed border-accent/40 bg-accent/20 text-accent/90"
-            : "border-accent bg-accent text-white hover:bg-accent-2"
+        className={`inline-flex w-full max-w-sm items-center justify-center gap-2 rounded-xl px-6 py-4 text-lg font-semibold transition-colors ${
+          disabled && !loading
+            ? "cursor-not-allowed bg-surface-2 text-muted"
+            : loading
+              ? "cursor-wait bg-accent/80 text-white"
+              : "bg-accent text-white shadow-sm hover:bg-accent-2"
         }`}
       >
-        {loading ? "Đang phân tích..." : "Bắt đầu sàng lọc →"}
+        {loading ? (
+          <>
+            <span
+              className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white"
+              aria-hidden="true"
+            />
+            Đang phân tích...
+          </>
+        ) : (
+          <>
+            Xem kết quả
+            <ArrowRightIcon className="h-5 w-5" />
+          </>
+        )}
       </button>
-      <p className="text-sm text-muted">Ảnh chữ viết tay là tùy chọn.</p>
+      <p className="text-[15px] text-muted" aria-live="polite">
+        {loading
+          ? "Việc phân tích có thể mất 1–2 phút với video dài. Vui lòng giữ nguyên trang này."
+          : hint}
+      </p>
     </div>
   );
 }

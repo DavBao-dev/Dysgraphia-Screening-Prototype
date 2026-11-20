@@ -1,24 +1,38 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import StudentInput from "@/components/StudentInput";
-import ProgressSteps from "@/components/ProgressSteps";
-import DetailsSection from "@/components/DetailsSection";
+import StepCard from "@/components/StepCard";
+import TipList from "@/components/TipList";
 import VideoPanel from "@/components/VideoPanel";
 import HandwritingPanel from "@/components/HandwritingPanel";
 import RunButton from "@/components/RunButton";
+import { ArrowLeftIcon, ShieldIcon } from "@/components/Icons";
 import type { DropzoneValue } from "@/components/Dropzone";
 import type { LiveData } from "@/components/LiveCamera";
 import { runScreening } from "@/lib/api";
 import { MIN_LIVE_FRAMES } from "@/lib/constants";
 
-const PROGRESS_STEPS = ["1. Chuyển động tay", "2. Chữ viết tay", "3. Kết quả"];
+const VIDEO_TIPS = [
+  "Quay từ trên xuống, thấy rõ bàn tay cầm bút",
+  "Trẻ viết bình thường khoảng 15–30 giây",
+  "Đủ ánh sáng, không quay ngược sáng",
+  "Giữ điện thoại cố định, không cần quay mặt trẻ",
+];
+
+const IMAGE_TIPS = [
+  "Chụp thẳng trang vở, không nghiêng",
+  "Chụp 2–3 dòng trẻ tự viết",
+  "Đủ sáng, không bị bóng tay che",
+  "Ảnh rõ nét, không bị mờ",
+];
 
 export default function ScreeningPage() {
   const router = useRouter();
-  const [patientId, setPatientId] = useState("student_001");
+  const [patientId, setPatientId] = useState("");
   const [mode, setMode] = useState<"video" | "live">("video");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoDuration, setVideoDuration] = useState<number | undefined>(undefined);
@@ -33,8 +47,6 @@ export default function ScreeningPage() {
 
   const hasModelA =
     mode === "video" ? !!videoFile : !!liveData && liveData.landmarks.length >= MIN_LIVE_FRAMES;
-
-  const progressStep = !hasModelA ? 0 : imageFile ? 2 : 1;
 
   function handleVideoFile(file: File | null) {
     setVideoFile(file);
@@ -77,7 +89,7 @@ export default function ScreeningPage() {
     setError(null);
 
     const form = new FormData();
-    form.append("patient_id", patientId.trim() || "student_001");
+    form.append("patient_id", patientId.trim() || "Chưa đặt mã");
     form.append("model_a_source", mode);
     if (mode === "video" && videoFile) {
       form.append("video", videoFile);
@@ -99,90 +111,79 @@ export default function ScreeningPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-[960px] flex-1 px-6 py-8">
-      <h1 className="text-3xl font-bold tracking-tight text-text">Sàng lọc chữ viết</h1>
-      <p className="mt-2 text-sm text-muted">
-        Đánh giá một vài đặc điểm trong cách bạn viết và chuyển động tay.
+    <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+      <Link href="/" className="inline-flex items-center gap-1.5 text-[15px] font-medium text-accent-2 hover:underline">
+        <ArrowLeftIcon className="h-4 w-4" />
+        Trang chủ
+      </Link>
+
+      <h1 className="mt-3 text-3xl font-bold tracking-tight text-text">Kiểm tra dấu hiệu khó viết</h1>
+      <p className="mt-2 text-lg leading-relaxed text-muted">
+        Làm lần lượt các bước dưới đây. Chỉ có video bàn tay là bắt buộc.
       </p>
 
-      <div className="mt-4 flex justify-center">
-        <ProgressSteps steps={PROGRESS_STEPS} current={progressStep} />
-      </div>
-
-      <div className="mt-4">
-        <StudentInput value={patientId} onChange={(v) => { setPatientId(v); setError(null); }} />
-      </div>
-
-      <div className="mt-6 rounded-xl border border-border bg-surface p-4 sm:p-5">
-        <div className="grid gap-6 lg:grid-cols-2 lg:gap-10">
-          <section className="border-b border-border pb-6 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-8">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-baseline gap-2">
-                <span className="text-sm font-semibold text-accent">01</span>
-                <h2 className="text-lg font-semibold text-text">Chuyển động tay</h2>
-              </div>
-              <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-white">
-                Bắt buộc
-              </span>
-            </div>
-            <div className="mt-3">
-              <VideoPanel
-                mode={mode}
-                onModeChange={handleModeChange}
-                videoValue={videoValue}
-                onVideoFile={handleVideoFile}
-                liveData={liveData}
-                onLiveData={handleLiveData}
-                onRetake={() => handleLiveData(null)}
-              />
-            </div>
-            <div className="mt-3">
-              <DetailsSection>
-                <ul className="list-disc space-y-1 pl-4">
-                  <li>Một đoạn video ngắn (vài giây) với bàn tay trong khung hình là đủ.</li>
-                  <li>Cần ít nhất {MIN_LIVE_FRAMES} khung hình có bàn tay để phân tích chuyển động.</li>
-                  <li>Đảm bảo đủ ánh sáng và bàn tay nằm gọn trong khung hình.</li>
-                  <li>Video chỉ dùng trong phiên hiện tại, không lưu lại hình ảnh gốc.</li>
-                </ul>
-              </DetailsSection>
-            </div>
-          </section>
-
-          <section className="lg:pl-8">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-baseline gap-2">
-                <span className="text-sm font-semibold text-accent">02</span>
-                <h2 className="text-lg font-semibold text-text">Chữ viết tay</h2>
-              </div>
-              <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-medium text-teal">
-                Tùy chọn
-              </span>
-            </div>
-            <p className="mt-1 text-sm text-muted">
-              Thêm ảnh chữ viết tay để có thêm một nguồn phân tích.
-            </p>
-            <div className="mt-3">
-              <HandwritingPanel
-                onFile={handleImageFile}
-                value={imageFile ? { name: imageFile.name, size: imageFile.size } : undefined}
-              />
-            </div>
-          </section>
-        </div>
-
-        <div className="mt-5 flex flex-col items-center border-t border-border pt-4">
-          <RunButton
-            disabled={!hasModelA}
-            loading={loading}
-            error={error ?? undefined}
-            onClick={() => void handleRun()}
+      <div className="mt-8 space-y-5">
+        <StepCard number={1} title="Thông tin của trẻ" optional done={patientId.trim().length > 0}>
+          <StudentInput
+            value={patientId}
+            onChange={(v) => {
+              setPatientId(v);
+              setError(null);
+            }}
           />
-        </div>
+        </StepCard>
+
+        <StepCard
+          number={2}
+          title="Video bàn tay khi trẻ viết"
+          done={hasModelA}
+          description="Hệ thống xem cách bàn tay di chuyển: tốc độ, độ mượt, những lần dừng bút và độ run tay."
+        >
+          <div className="space-y-4">
+            <TipList title="Cách quay video" tips={VIDEO_TIPS} />
+            <VideoPanel
+              mode={mode}
+              onModeChange={handleModeChange}
+              videoValue={videoValue}
+              onVideoFile={handleVideoFile}
+              liveData={liveData}
+              onLiveData={handleLiveData}
+              onRetake={() => handleLiveData(null)}
+            />
+          </div>
+        </StepCard>
+
+        <StepCard
+          number={3}
+          title="Ảnh chụp chữ viết"
+          optional
+          done={!!imageFile}
+          description="Thêm ảnh giúp hệ thống xem cả hình dạng chữ: độ đậm nét và chữ có thẳng hàng hay không."
+        >
+          <div className="space-y-4">
+            <TipList title="Cách chụp ảnh" tips={IMAGE_TIPS} />
+            <HandwritingPanel
+              onFile={handleImageFile}
+              value={imageFile ? { name: imageFile.name, size: imageFile.size } : undefined}
+            />
+          </div>
+        </StepCard>
       </div>
 
-      <p className="mt-5 text-center text-xs text-muted">
-        Đây là công cụ sàng lọc, không phải chẩn đoán. Kết quả chỉ mang tính tham khảo.
+      <div className="mt-8 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+        <RunButton
+          disabled={!hasModelA}
+          loading={loading}
+          error={error ?? undefined}
+          hint={hasModelA ? "Kết quả sẽ hiện ngay sau khi phân tích xong." : "Hãy thêm video bàn tay ở Bước 2 để tiếp tục."}
+          onClick={() => void handleRun()}
+        />
+      </div>
+
+      <p className="mt-5 flex items-start justify-center gap-2 text-center text-sm text-muted">
+        <ShieldIcon className="mt-0.5 h-4 w-4 shrink-0" />
+        Video và ảnh không được lưu lại sau khi phân tích. Hệ thống chỉ lưu kết quả kèm mã học sinh.
       </p>
-    </main>
+    </div>
   );
 }

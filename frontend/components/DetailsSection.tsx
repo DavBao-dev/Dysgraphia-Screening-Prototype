@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronDownIcon } from "./Icons";
 
 interface DetailsSectionProps {
   title?: string;
@@ -15,24 +16,17 @@ export default function DetailsSection({ title = "Xem chi tiết", children }: D
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 text-sm text-muted hover:text-text"
+        className="flex items-center gap-1.5 rounded-md text-left text-[15px] font-medium text-accent-2 hover:underline"
         aria-expanded={open}
       >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
-          aria-hidden="true"
-        >
-          <path d="M6 9l6 6 6-6" />
-        </svg>
+        <ChevronDownIcon className={`h-4 w-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
         {title}
       </button>
-      {open && <div className="mt-2 rounded-lg bg-surface-2/60 p-3 text-sm text-muted">{children}</div>}
+      {open && (
+        <div className="mt-2 rounded-xl border border-border bg-surface-2 p-4 text-sm leading-relaxed text-muted">
+          {children}
+        </div>
+      )}
     </div>
   );
 }

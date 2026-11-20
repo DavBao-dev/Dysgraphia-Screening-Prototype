@@ -1,122 +1,74 @@
+import type { ComponentType, SVGProps } from "react";
 import type { Quality } from "@/types/screening";
 import StatusCard from "./StatusCard";
 import FeatureGroups from "./FeatureGroups";
 import DetailsSection from "./DetailsSection";
 
-function signalLabel(p: number | null): string {
-  if (p === 1) return "Có dấu hiệu";
-  if (p === 0) return "Chưa phát hiện dấu hiệu";
-  return "Chưa phân tích";
-}
-
-function signalColor(p: number | null): string {
-  if (p === 1) return "text-amber";
-  if (p === 0) return "text-green";
-  return "text-muted";
-}
-
-function signalDot(p: number | null): string {
-  if (p === 1) return "bg-amber";
-  if (p === 0) return "bg-green";
-  return "bg-border";
+function signal(p: number | null): { label: string; cls: string; dot: string } {
+  if (p === 1) return { label: "Có dấu hiệu cần chú ý", cls: "bg-accent-soft text-accent-2", dot: "bg-accent" };
+  if (p === 0) return { label: "Chưa thấy dấu hiệu", cls: "bg-green-soft text-green", dot: "bg-green" };
+  return { label: "Chưa phân tích được", cls: "bg-surface-2 text-muted", dot: "bg-muted" };
 }
 
 interface ModelCardProps {
   title: string;
-  badge?: string;
-  badgeVariant?: "accent" | "neutral";
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  lookedAt: string;
   available: boolean;
   prediction: number | null;
   score?: number | null;
   quality?: Quality | null;
   features?: Record<string, number | null> | null;
   handcrafted?: Record<string, number | null> | null;
-  featuresLabel?: string;
   technicalName?: string;
   unavailableText?: string;
 }
 
 export default function ModelCard({
   title,
-  badge,
-  badgeVariant = "accent",
+  icon: Icon,
+  lookedAt,
   available,
   prediction,
   score,
   quality,
   features,
   handcrafted,
-  featuresLabel,
   technicalName,
   unavailableText,
 }: ModelCardProps) {
-  const hasDetails = Boolean(
-    technicalName || quality != null || (features && Object.keys(features).length > 0) || (handcrafted && Object.keys(handcrafted).length > 0)
-  );
-
-  if (!available) {
-    return (
-      <div className="rounded-xl border border-border bg-surface p-5">
-        <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold text-text">{title}</h3>
-          {badge && (
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                badgeVariant === "accent"
-                  ? "bg-accent text-white"
-                  : "bg-surface-2 text-green"
-              }`}
-            >
-              {badge}
-            </span>
-          )}
-        </div>
-        <p className="mt-3 flex items-center gap-1.5 text-sm text-muted">
-          <span className="h-1.5 w-1.5 rounded-full bg-border" aria-hidden="true" />
-          Chưa phân tích
-        </p>
-        <p className="mt-1 text-sm text-muted">{unavailableText ?? "Không khả dụng"}</p>
-      </div>
+  const s = available ? signal(prediction) : { label: "Không có dữ liệu", cls: "bg-surface-2 text-muted", dot: "bg-muted" };
+  const hasDetails =
+    available &&
+    Boolean(
+      technicalName ||
+        score != null ||
+        quality != null ||
+        (features && Object.keys(features).length > 0) ||
+        (handcrafted && Object.keys(handcrafted).length > 0)
     );
-  }
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-5">
-      <div className="flex items-center gap-2">
+    <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+      <div className="flex items-center gap-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2 text-accent">
+          <Icon className="h-5 w-5" />
+        </span>
         <h3 className="text-lg font-semibold text-text">{title}</h3>
-        {badge && (
-          <span
-            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              badgeVariant === "accent"
-                ? "bg-accent text-white"
-                : "bg-surface-2 text-green"
-            }`}
-          >
-            {badge}
-          </span>
-        )}
       </div>
 
-      <dl className="mt-4 rounded-lg border border-border bg-surface-2 p-3 text-sm">
-        <div className="flex items-center justify-between">
-          <dt className="text-muted">Tín hiệu sàng lọc</dt>
-          <dd className={`flex items-center gap-1.5 font-medium ${signalColor(prediction)}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${signalDot(prediction)}`} aria-hidden="true" />
-            {signalLabel(prediction)}
-          </dd>
-        </div>
-        {score != null && (
-          <div className="mt-1 flex items-center justify-between">
-            <dt className="text-muted">Điểm mô hình</dt>
-            <dd className="font-mono text-text">{(score * 100).toFixed(1)}%</dd>
-          </div>
-        )}
-      </dl>
+      <p className={`mt-4 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[15px] font-medium ${s.cls}`}>
+        <span className={`h-2 w-2 rounded-full ${s.dot}`} aria-hidden="true" />
+        {s.label}
+      </p>
+
+      <p className="mt-3 text-[15px] leading-relaxed text-muted">{available ? lookedAt : unavailableText}</p>
 
       {hasDetails && (
-        <div className="mt-3">
+        <div className="print:hidden">
           <DetailsSection title="Chi tiết kỹ thuật">
-            {technicalName && <p className="text-sm text-muted">Mô hình: {technicalName}</p>}
+            {technicalName && <p>Mô hình: {technicalName}</p>}
+            {score != null && <p className="mt-1">Điểm của mô hình: {(score * 100).toFixed(1)}% (ngưỡng 50%)</p>}
             {quality != null && (
               <div className="mt-2">
                 <StatusCard quality={quality} />
@@ -124,12 +76,12 @@ export default function ModelCard({
             )}
             {features && Object.keys(features).length > 0 && (
               <div className="mt-3">
-                <FeatureGroups features={features} title={featuresLabel} />
+                <FeatureGroups features={features} />
               </div>
             )}
             {handcrafted && Object.keys(handcrafted).length > 0 && (
               <div className="mt-3">
-                <FeatureGroups features={handcrafted} title={featuresLabel} />
+                <FeatureGroups features={handcrafted} />
               </div>
             )}
           </DetailsSection>

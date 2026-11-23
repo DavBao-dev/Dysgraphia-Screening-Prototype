@@ -1,7 +1,5 @@
 "use client";
 
-import { ArrowRightIcon } from "./Icons";
-
 interface RunButtonProps {
   disabled: boolean;
   loading: boolean;
@@ -12,46 +10,35 @@ interface RunButtonProps {
 
 export default function RunButton({ disabled, loading, error, hint, onClick }: RunButtonProps) {
   return (
-    <div className="flex flex-col items-center gap-3 text-center">
+    <div className="flex flex-col items-start gap-3">
       {error && (
-        <p
-          role="alert"
-          className="w-full max-w-md rounded-xl border border-red/25 bg-red/5 px-4 py-3 text-[15px] text-red"
-        >
-          {error}
+        <p role="alert" className="w-full max-w-xl rounded-sheet border border-red/30 bg-surface px-4 py-3 text-[15px] text-red">
+          <strong>Chưa phân tích được.</strong> {error}
         </p>
       )}
       <button
         type="button"
         onClick={onClick}
         disabled={disabled || loading}
-        className={`inline-flex w-full max-w-sm items-center justify-center gap-2 rounded-xl px-6 py-4 text-lg font-semibold transition-colors ${
+        aria-describedby="run-hint"
+        className={`inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-md px-8 text-lg font-semibold sm:w-auto ${
           disabled && !loading
-            ? "cursor-not-allowed bg-surface-2 text-muted"
+            ? "border border-border bg-surface-2 text-muted"
             : loading
-              ? "cursor-wait bg-accent/80 text-white"
-              : "bg-accent text-white shadow-sm hover:bg-accent-2"
+              ? "bg-accent-2 text-white"
+              : "bg-accent text-white hover:bg-accent-2 active:translate-y-px"
         }`}
       >
-        {loading ? (
-          <>
-            <span
-              className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white"
-              aria-hidden="true"
-            />
-            Đang phân tích...
-          </>
-        ) : (
-          <>
-            Xem kết quả
-            <ArrowRightIcon className="h-5 w-5" />
-          </>
+        {loading && (
+          <span
+            className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white"
+            aria-hidden="true"
+          />
         )}
+        {loading ? "Đang phân tích..." : "Xem kết quả"}
       </button>
-      <p className="text-[15px] text-muted" aria-live="polite">
-        {loading
-          ? "Việc phân tích có thể mất 1–2 phút với video dài. Vui lòng giữ nguyên trang này."
-          : hint}
+      <p id="run-hint" className="text-[15px] text-muted" aria-live="polite">
+        {loading ? "Video càng dài thì càng phải chờ lâu, có thể vài phút. Vui lòng giữ nguyên trang này." : hint}
       </p>
     </div>
   );

@@ -1,27 +1,34 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Be_Vietnam_Pro } from "next/font/google";
+import { Be_Vietnam_Pro, Lora } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import "./globals.css";
 
-// Be Vietnam Pro: designed for Vietnamese diacritics, friendly and very readable.
-const appFont = Be_Vietnam_Pro({
+// Body: Be Vietnam Pro, drawn for Vietnamese diacritics, very readable at small sizes.
+const bodyFont = Be_Vietnam_Pro({
   weight: ["400", "500", "600", "700"],
   subsets: ["latin", "vietnamese"],
   display: "swap",
-  variable: "--font-app",
+  variable: "--font-body",
+});
+
+// Headings: Lora, a book serif with full Vietnamese support; gives the "sách giáo khoa" tone of the direction.
+const headingFont = Lora({
+  subsets: ["latin", "vietnamese"],
+  display: "swap",
+  variable: "--font-heading",
 });
 
 export const metadata: Metadata = {
-  title: "Sàng lọc sớm dấu hiệu khó viết",
+  title: "DysScan · Sàng lọc sớm dấu hiệu khó viết",
   description:
-    "Công cụ giúp giáo viên và phụ huynh nhận biết sớm dấu hiệu khó viết (dysgraphia) ở trẻ qua video tay khi viết và ảnh chữ viết. Không thay thế chẩn đoán của chuyên gia.",
+    "Công cụ giúp giáo viên và phụ huynh nhận biết sớm dấu hiệu khó viết (dysgraphia) ở trẻ qua video bàn tay khi viết và ảnh chữ viết. Không thay thế chẩn đoán của chuyên gia.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="vi" className={`${appFont.variable} h-full`}>
+    <html lang="vi" className={`${bodyFont.variable} ${headingFont.variable} h-full`}>
       <body className="flex min-h-full flex-col bg-background font-sans text-text antialiased">
         <Header />
         <main className="flex w-full flex-1 flex-col">{children}</main>

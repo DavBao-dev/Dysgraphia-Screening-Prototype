@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 
 import { MAX_VIDEO_BYTES, MAX_VIDEO_MB, MAX_VIDEO_MSG } from "@/lib/constants";
-import { CheckIcon, UploadIcon } from "./Icons";
+import { UploadIcon } from "./Icons";
 
 export interface DropzoneValue {
   name: string;
@@ -110,23 +110,19 @@ export default function Dropzone({ accept, onFile, value, onRemove, title }: Dro
       />
 
       {info ? (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-green/30 bg-green-soft px-4 py-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface text-green">
-              <CheckIcon className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-base font-medium text-text">{info.name}</p>
-              <p className="text-sm text-muted">
-                {(info.size / (1024 * 1024)).toFixed(1)} MB
-                {info.duration ? ` · ${Math.round(info.duration)} giây` : ""}
-              </p>
-            </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-sheet border border-green/40 bg-green-soft px-4 py-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-green">✓ Đã chọn tệp</p>
+            <p className="truncate text-base font-medium text-text">{info.name}</p>
+            <p className="text-sm text-muted">
+              {(info.size / (1024 * 1024)).toFixed(1)} MB
+              {info.duration ? ` · ${Math.round(info.duration)} giây` : ""}
+            </p>
           </div>
           <button
             type="button"
             onClick={handleRemove}
-            className="shrink-0 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-muted hover:text-text"
+            className="min-h-11 shrink-0 rounded-md border border-border bg-surface px-4 text-sm font-medium text-text hover:bg-surface-2 active:bg-border"
           >
             Chọn tệp khác
           </button>
@@ -162,14 +158,13 @@ export default function Dropzone({ accept, onFile, value, onRemove, title }: Dro
             const next = e.dataTransfer.files?.[0];
             if (next) acceptFile(next);
           }}
-          className={`flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed px-6 py-7 text-center transition-colors ${
-            drag ? "border-accent bg-accent-soft" : "border-border bg-surface hover:border-accent/50 hover:bg-accent-soft/50"
+          className={`flex flex-col items-center justify-center gap-1 rounded-sheet border-2 border-dashed px-6 py-7 text-center ${
+            drag ? "border-accent bg-accent-soft" : "border-field-accent bg-surface hover:border-accent active:bg-accent-soft"
           }`}
         >
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent-soft text-accent">
-            <UploadIcon className="h-5 w-5" />
-          </span>
-          <p className="mt-1 text-base font-semibold text-accent-2">{dropTitle}</p>
+          {/* Upload glyph: says "this box takes a file", the only icon on the form. */}
+          <UploadIcon className="h-6 w-6 text-accent" />
+          <p className="mt-1 text-base font-semibold text-accent-2 underline decoration-1 underline-offset-4">{dropTitle}</p>
           <p className="text-[15px] text-muted">hoặc kéo thả tệp vào đây</p>
           <p className="text-sm text-muted">
             {isVideoAccept ? `Video MP4, MOV, AVI · tối đa ${MAX_VIDEO_MB} MB` : "Ảnh PNG hoặc JPG"}

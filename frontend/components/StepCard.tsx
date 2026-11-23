@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { CheckIcon } from "./Icons";
 
 interface StepCardProps {
   number: number;
@@ -10,40 +9,31 @@ interface StepCardProps {
   children: ReactNode;
 }
 
+// One step of the form, laid out like a numbered exercise: label column on the left, the work on the right.
 export default function StepCard({ number, title, optional, done, description, children }: StepCardProps) {
   return (
     <section
       aria-labelledby={`step-${number}-title`}
-      className={`rounded-2xl border bg-surface p-5 shadow-sm sm:p-6 ${done ? "border-green/40" : "border-border"}`}
+      className="grid gap-x-8 gap-y-4 border-t border-border py-8 md:grid-cols-[220px_1fr]"
     >
-      <div className="flex items-start gap-4">
-        <span
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base font-bold ${
-            done ? "bg-green text-white" : "bg-accent-soft text-accent-2"
-          }`}
-          aria-hidden="true"
-        >
-          {done ? <CheckIcon className="h-5 w-5" /> : number}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <h2 id={`step-${number}-title`} className="text-xl font-semibold text-text">
-              <span className="sr-only">Bước {number}: </span>
-              {title}
-            </h2>
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-sm font-medium ${
-                optional ? "bg-surface-2 text-muted" : "bg-accent-soft text-accent-2"
-              }`}
-            >
-              {optional ? "Không bắt buộc" : "Bắt buộc"}
-            </span>
-            {done && <span className="text-sm font-medium text-green">Đã xong</span>}
-          </div>
-          {description && <div className="mt-1.5 text-base leading-relaxed text-muted">{description}</div>}
-        </div>
+      <div>
+        <p className="text-sm font-semibold text-muted">
+          Bước {number}
+          <span className="font-normal"> · {optional ? "không bắt buộc" : "bắt buộc"}</span>
+        </p>
+        <h2 id={`step-${number}-title`} className="mt-1 font-serif text-xl font-semibold leading-snug text-text">
+          {title}
+        </h2>
+        {done && (
+          <p className="mt-2 text-sm font-semibold text-green" role="status">
+            ✓ Đã xong
+          </p>
+        )}
       </div>
-      <div className="mt-5 sm:pl-[52px]">{children}</div>
+      <div className="min-w-0">
+        {description && <p className="mb-4 text-base leading-7 text-muted">{description}</p>}
+        {children}
+      </div>
     </section>
   );
 }

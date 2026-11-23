@@ -4,16 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
-import ModelCard from "@/components/ModelCard";
-import {
-  ArrowLeftIcon,
-  CheckCircleIcon,
-  EyeIcon,
-  ImageIcon,
-  InfoIcon,
-  PrinterIcon,
-  VideoIcon,
-} from "@/components/Icons";
+import PartRow from "@/components/PartRow";
+import DetailsSection from "@/components/DetailsSection";
+import StatusCard from "@/components/StatusCard";
+import FeatureGroups from "@/components/FeatureGroups";
 import { getSession } from "@/lib/api";
 import type { ApiError } from "@/lib/api";
 import type { SessionDetail } from "@/types/screening";
@@ -36,9 +30,7 @@ interface Verdict {
   title: string;
   summary: string;
   steps: string[];
-  tone: string;
-  iconTone: string;
-  icon: typeof CheckCircleIcon;
+  titleCls: string;
 }
 
 function verdictFor(prediction: number | null | undefined): Verdict {
@@ -46,45 +38,37 @@ function verdictFor(prediction: number | null | undefined): Verdict {
     return {
       title: "Nên theo dõi thêm",
       summary:
-        "Hệ thống thấy một vài dấu hiệu có thể liên quan đến khó viết. Điều này không có nghĩa là trẻ bị khó viết, nhưng trẻ nên được quan sát kỹ hơn.",
+        "Hệ thống thấy một vài dấu hiệu có thể liên quan đến khó viết. Điều này không có nghĩa là em bị khó viết, nhưng em nên được quan sát kỹ hơn trong thời gian tới.",
       steps: [
-        "Trao đổi giữa giáo viên và phụ huynh về việc viết của trẻ ở lớp và ở nhà.",
-        "Quan sát thêm trong 2–4 tuần: cách cầm bút, tốc độ viết, chữ có lệch dòng không, trẻ có hay kêu mỏi tay không.",
-        "Nếu các dấu hiệu kéo dài, hãy đưa trẻ gặp chuyên gia để được đánh giá: chuyên viên tâm lý học đường, chuyên viên hoạt động trị liệu hoặc bác sĩ nhi khoa phát triển.",
-        "Khó viết không liên quan đến trí thông minh. Phát hiện sớm giúp trẻ được hỗ trợ kịp thời.",
+        "Giáo viên và phụ huynh trao đổi với nhau về việc viết của em ở lớp và ở nhà.",
+        "Quan sát thêm trong 2 đến 4 tuần: cách cầm bút, tốc độ viết, chữ có bám dòng không, em có hay kêu mỏi tay không.",
+        "Nếu các dấu hiệu vẫn còn, đưa em gặp chuyên gia để được đánh giá, ví dụ chuyên viên tâm lý học đường, chuyên viên hoạt động trị liệu hoặc bác sĩ nhi khoa phát triển.",
       ],
-      tone: "border-accent/30 bg-accent-soft",
-      iconTone: "bg-accent text-white",
-      icon: EyeIcon,
+      titleCls: "text-accent-2",
     };
   }
   if (prediction === 0) {
     return {
       title: "Chưa thấy dấu hiệu đáng lo",
-      summary:
-        "Ở lần kiểm tra này, cách viết của trẻ chưa cho thấy dấu hiệu khó viết rõ rệt.",
+      summary: "Ở lần kiểm tra này, cách viết của em chưa cho thấy dấu hiệu khó viết rõ rệt.",
       steps: [
-        "Tiếp tục khuyến khích trẻ viết đều đặn mỗi ngày.",
-        "Nếu trẻ vẫn gặp khó khăn kéo dài (viết rất chậm, chữ khó đọc, hay mỏi tay), hãy kiểm tra lại sau vài tuần hoặc trao đổi với giáo viên.",
-        "Một lần kiểm tra không thể phát hiện mọi trường hợp. Sự quan sát của giáo viên và phụ huynh vẫn quan trọng nhất.",
+        "Tiếp tục cho em viết đều đặn mỗi ngày.",
+        "Nếu em vẫn gặp khó khăn kéo dài, như viết rất chậm, chữ khó đọc hay hay mỏi tay, hãy kiểm tra lại sau vài tuần hoặc trao đổi với giáo viên.",
+        "Một lần kiểm tra không phát hiện được mọi trường hợp. Những gì thầy cô và gia đình quan sát hằng ngày vẫn quan trọng nhất.",
       ],
-      tone: "border-green/30 bg-green-soft",
-      iconTone: "bg-green text-white",
-      icon: CheckCircleIcon,
+      titleCls: "text-green",
     };
   }
   return {
     title: "Chưa đủ thông tin",
-    summary: "Hệ thống chưa có đủ dữ liệu để đưa ra kết quả. Hãy thử kiểm tra lại với một video rõ hơn.",
-    steps: ["Xem lại phần “Cách quay video” và thực hiện kiểm tra mới."],
-    tone: "border-border bg-surface-2",
-    iconTone: "bg-muted text-white",
-    icon: InfoIcon,
+    summary: "Hệ thống chưa có đủ dữ liệu để đưa ra kết quả. Hãy thử lại với một video quay rõ bàn tay hơn.",
+    steps: ["Xem lại phần cách quay video trong trang Hướng dẫn, rồi kiểm tra lại."],
+    titleCls: "text-text",
   };
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10">{children}</div>;
+  return <div className="mx-auto w-full max-w-3xl px-4 pt-8 sm:px-6 sm:pt-12">{children}</div>;
 }
 
 export default function ResultsPage() {
@@ -106,7 +90,11 @@ export default function ResultsPage() {
       })
       .catch((e: ApiError) => {
         if (!cancelled) {
-          setError(e.status === 404 ? "Không tìm thấy kết quả này." : "Không thể tải kết quả. Vui lòng thử lại.");
+          setError(
+            e.status === 404
+              ? "Không tìm thấy phiếu kết quả này. Có thể máy chủ đã được khởi động lại và xoá dữ liệu cũ."
+              : "Không tải được phiếu kết quả. Hãy kiểm tra kết nối mạng rồi tải lại trang."
+          );
           setLoading(false);
         }
       });
@@ -119,7 +107,9 @@ export default function ResultsPage() {
   if (loading) {
     return (
       <Shell>
-        <p className="text-base text-muted">Đang tải kết quả…</p>
+        <p className="text-base text-muted" role="status">
+          Đang tải phiếu kết quả...
+        </p>
       </Shell>
     );
   }
@@ -127,9 +117,13 @@ export default function ResultsPage() {
   if (error || !data) {
     return (
       <Shell>
-        <p className="text-base text-red">{error ?? "Không thể tải kết quả."}</p>
-        <Link href="/history" className="mt-4 inline-block text-[15px] font-medium text-accent-2 hover:underline">
-          ← Về danh sách kết quả
+        <h1 className="font-serif text-2xl font-semibold text-text">Không mở được phiếu kết quả</h1>
+        <p className="mt-3 text-base text-text">{error ?? "Không tải được phiếu kết quả."}</p>
+        <Link
+          href="/history"
+          className="mt-4 inline-flex min-h-11 items-center text-base font-medium text-accent-2 underline underline-offset-4"
+        >
+          Về danh sách kết quả đã lưu
         </Link>
       </Shell>
     );
@@ -138,118 +132,122 @@ export default function ResultsPage() {
   const modelA = data.model_a;
   const modelB = data.model_b;
   const verdict = verdictFor(data.ensemble?.prediction);
-  const VerdictIcon = verdict.icon;
 
   return (
     <Shell>
-      <Link
-        href="/history"
-        className="inline-flex items-center gap-1.5 text-[15px] font-medium text-accent-2 hover:underline print:hidden"
-      >
-        <ArrowLeftIcon className="h-4 w-4" />
-        Kết quả đã lưu
-      </Link>
-
-      <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-text">Kết quả kiểm tra</h1>
-          <p className="mt-1.5 text-base text-muted">
-            Mã học sinh: <span className="font-semibold text-text">{data.patient_id}</span>
-            <span className="mx-2" aria-hidden="true">·</span>
-            {formatDate(data.created_at)}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2 print:hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
+        <Link
+          href="/history"
+          className="inline-flex min-h-11 items-center text-[15px] font-medium text-accent-2 underline decoration-1 underline-offset-4 hover:decoration-2"
+        >
+          Kết quả đã lưu
+        </Link>
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => window.print()}
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-[15px] font-semibold text-text hover:bg-surface-2"
+            className="min-h-11 rounded-md border border-border bg-surface px-4 text-[15px] font-semibold text-text hover:bg-surface-2 active:bg-border"
           >
-            <PrinterIcon className="h-4 w-4" />
-            In kết quả
+            In phiếu
           </button>
           <Link
             href="/screening"
-            className="inline-flex items-center rounded-xl bg-accent px-4 py-2.5 text-[15px] font-semibold text-white hover:bg-accent-2"
+            className="inline-flex min-h-11 items-center rounded-md bg-accent px-4 text-[15px] font-semibold text-white hover:bg-accent-2 active:translate-y-px"
           >
-            Kiểm tra lần mới
+            Kiểm tra cho em khác
           </Link>
         </div>
       </div>
 
-      {/* Main verdict */}
-      <section className={`mt-6 rounded-2xl border p-6 ${verdict.tone}`} aria-labelledby="verdict-title">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-          <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${verdict.iconTone}`}>
-            <VerdictIcon className="h-6 w-6" />
-          </span>
-          <div>
-            <h2 id="verdict-title" className="text-2xl font-bold text-text">
-              {verdict.title}
-            </h2>
-            <p className="mt-2 text-lg leading-relaxed text-text">{verdict.summary}</p>
+      {/* The result slip: the one raised element on the page, a sheet lying on the desk. */}
+      <article className="mt-5 overflow-hidden rounded-sheet border border-border bg-surface shadow-[0_1px_2px_rgba(42,34,56,0.06),0_8px_24px_rgba(42,34,56,0.08)] print:shadow-none">
+        <header className="o-li border-b border-border py-5 pl-14 pr-5 sm:pl-16">
+          {/* Text on the ruled strip uses the main ink colour: muted grey drops below 4.5:1 where it crosses a strong rule. */}
+          <p className="text-sm font-semibold text-text">Phiếu kết quả sàng lọc</p>
+          <h1 className="mt-1 font-serif text-2xl font-semibold text-text">Mã học sinh: {data.patient_id}</h1>
+          <p className="mt-1 text-[15px] text-text">Ngày kiểm tra: {formatDate(data.created_at)}</p>
+        </header>
+
+        <div className="px-5 py-7 sm:px-8">
+          <h2 className={`font-serif text-[1.9rem] font-semibold leading-tight ${verdict.titleCls}`}>{verdict.title}</h2>
+          <p className="mt-3 text-lg leading-8 text-text">{verdict.summary}</p>
+
+          <h3 className="mt-8 text-lg font-semibold text-text">Nên làm gì tiếp theo</h3>
+          <ol className="mt-3 list-decimal space-y-3 pl-6 text-base leading-7 text-text marker:font-semibold marker:text-accent">
+            {verdict.steps.map((step) => (
+              <li key={step} className="pl-1">
+                {step}
+              </li>
+            ))}
+          </ol>
+          {data.ensemble?.prediction === 1 && (
+            <p className="mt-4 text-base leading-7 text-muted">
+              Khó viết không liên quan đến trí thông minh. Phát hiện sớm giúp em được hỗ trợ kịp thời.
+            </p>
+          )}
+
+          <h3 className="mt-8 text-lg font-semibold text-text">Kết quả từng phần</h3>
+          <dl className="mt-2 border-b border-rule">
+            <PartRow
+              title="Bàn tay lúc viết"
+              lookedAt="Tốc độ và độ mượt của nét, những lần dừng bút và độ run của bàn tay."
+              available={modelA?.available ?? false}
+              prediction={modelA?.prediction ?? null}
+              unavailableText="Không có dữ liệu chuyển động tay."
+            />
+            <PartRow
+              title="Trang vở"
+              lookedAt="Hình dạng chữ, độ đậm của nét và chữ có bám dòng hay không."
+              available={modelB?.available ?? false}
+              prediction={modelB?.prediction ?? null}
+              unavailableText="Lần này không có ảnh trang vở. Lần sau thêm ảnh để kết quả đầy đủ hơn."
+            />
+          </dl>
+
+          <p className="mt-8 text-[15px] leading-7 text-muted">
+            Phiếu này chỉ là gợi ý sàng lọc, không phải chẩn đoán. Chỉ chuyên gia mới xác định được em có bị khó viết hay
+            không. Hãy dùng phiếu làm cơ sở để gia đình, nhà trường và chuyên gia trao đổi với nhau.
+          </p>
+
+          <div className="print:hidden">
+            <DetailsSection title="Chi tiết kỹ thuật">
+              <p className="font-semibold text-text">Bàn tay lúc viết</p>
+              <p className="mt-1">MediaPipe Hands (21 điểm trên bàn tay) và Random Forest, 18 đặc trưng vận động.</p>
+              {modelA?.score != null && <p className="mt-1">Điểm của mô hình: {(modelA.score * 100).toFixed(1)}% (ngưỡng 50%)</p>}
+              {modelA?.quality && (
+                <div className="mt-2">
+                  <StatusCard quality={modelA.quality} />
+                </div>
+              )}
+              {modelA?.features && Object.keys(modelA.features).length > 0 && (
+                <div className="mt-3">
+                  <FeatureGroups features={modelA.features} />
+                </div>
+              )}
+              <p className="mt-5 font-semibold text-text">Trang vở</p>
+              {modelB?.available ? (
+                <>
+                  <p className="mt-1">ResNet50 và MLP (ONNX Runtime), kèm 2 đặc trưng nét chữ.</p>
+                  {modelB.score != null && <p className="mt-1">Điểm của mô hình: {(modelB.score * 100).toFixed(1)}% (ngưỡng 50%)</p>}
+                  {modelB.handcrafted && (
+                    <div className="mt-3">
+                      <FeatureGroups
+                        features={{
+                          ink_thickness_mean: modelB.handcrafted.ink_thickness_mean,
+                          baseline_deviation: modelB.handcrafted.baseline_deviation,
+                        }}
+                      />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="mt-1">Không có ảnh.</p>
+              )}
+              {data.ensemble?.method && <p className="mt-5">Cách kết hợp hai phần: {data.ensemble.method}</p>}
+            </DetailsSection>
           </div>
         </div>
-      </section>
-
-      {/* Next steps */}
-      <section className="mt-5 rounded-2xl border border-border bg-surface p-6 shadow-sm">
-        <h2 className="text-xl font-semibold text-text">Nên làm gì tiếp theo?</h2>
-        <ol className="mt-4 space-y-3">
-          {verdict.steps.map((step, i) => (
-            <li key={step} className="flex items-start gap-3 text-base leading-relaxed text-text">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-2 text-sm font-semibold text-muted">
-                {i + 1}
-              </span>
-              {step}
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      {/* What was analysed */}
-      <h2 className="mt-8 text-xl font-semibold text-text">Hệ thống đã xem những gì?</h2>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <ModelCard
-          title="Chuyển động tay"
-          icon={VideoIcon}
-          lookedAt="Tốc độ và độ mượt khi viết, những lần dừng bút và độ run của bàn tay."
-          available={modelA?.available ?? false}
-          prediction={modelA?.prediction ?? null}
-          score={modelA?.score ?? null}
-          quality={modelA?.quality ?? null}
-          features={modelA?.features ?? null}
-          technicalName="MediaPipe Hands (21 điểm trên bàn tay) + Random Forest, 18 đặc trưng vận động"
-          unavailableText="Không có dữ liệu chuyển động tay."
-        />
-        <ModelCard
-          title="Chữ viết"
-          icon={ImageIcon}
-          lookedAt="Hình dạng chữ, độ đậm của nét và chữ có thẳng hàng theo dòng hay không."
-          available={modelB?.available ?? false}
-          prediction={modelB?.prediction ?? null}
-          score={modelB?.score ?? null}
-          handcrafted={
-            modelB?.handcrafted
-              ? {
-                  ink_thickness_mean: modelB.handcrafted.ink_thickness_mean,
-                  baseline_deviation: modelB.handcrafted.baseline_deviation,
-                }
-              : null
-          }
-          technicalName="ResNet50 + MLP (ONNX Runtime), 2 đặc trưng nét chữ"
-          unavailableText="Lần kiểm tra này không có ảnh chữ viết. Thêm ảnh ở lần sau để kết quả đầy đủ hơn."
-        />
-      </div>
-
-      <div className="mt-8 flex items-start gap-3 rounded-2xl border border-border bg-surface-2 p-5 text-[15px] leading-relaxed text-muted">
-        <InfoIcon className="mt-0.5 h-5 w-5 shrink-0 text-muted" />
-        <p>
-          <span className="font-semibold text-text">Kết quả này chỉ là gợi ý sàng lọc, không phải chẩn đoán.</span>{" "}
-          Chỉ chuyên gia mới có thể xác định trẻ có bị khó viết hay không. Hãy dùng kết quả này làm cơ sở để trao đổi
-          giữa gia đình, nhà trường và chuyên gia.
-        </p>
-      </div>
+      </article>
     </Shell>
   );
 }

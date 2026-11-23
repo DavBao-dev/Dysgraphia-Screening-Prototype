@@ -2,22 +2,20 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
-import { ArrowRightIcon } from "@/components/Icons";
 import { getHistory } from "@/lib/api";
 import type { HistoryRow } from "@/types/screening";
 
-function partLabel(p: number | null, missing = "—"): { text: string; cls: string } {
-  if (p === 1) return { text: "Cần chú ý", cls: "text-accent-2" };
-  if (p === 0) return { text: "Bình thường", cls: "text-green" };
+function partLabel(p: number | null, missing: string): { text: string; cls: string } {
+  if (p === 1) return { text: "Cần chú ý", cls: "text-accent-2 font-semibold" };
+  if (p === 0) return { text: "Chưa thấy dấu hiệu", cls: "text-green" };
   return { text: missing, cls: "text-muted" };
 }
 
-function finalPill(p: number | null): { text: string; cls: string } {
-  if (p === 1) return { text: "Nên theo dõi thêm", cls: "bg-accent-soft text-accent-2" };
-  if (p === 0) return { text: "Chưa thấy dấu hiệu", cls: "bg-green-soft text-green" };
-  return { text: "Chưa đủ thông tin", cls: "bg-surface-2 text-muted" };
+function overall(p: number | null): { text: string; cls: string } {
+  if (p === 1) return { text: "Nên theo dõi thêm", cls: "text-accent-2 font-semibold" };
+  if (p === 0) return { text: "Chưa thấy dấu hiệu đáng lo", cls: "text-green font-semibold" };
+  return { text: "Chưa đủ thông tin", cls: "text-muted font-semibold" };
 }
 
 function formatDate(raw: string): string {
@@ -36,16 +34,17 @@ function formatDate(raw: string): string {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
-      <h1 className="text-3xl font-bold tracking-tight text-text">Kết quả đã lưu</h1>
-      <p className="mt-2 text-lg text-muted">Các lần kiểm tra trước, mới nhất ở trên cùng. Bấm vào một dòng để xem lại.</p>
+    <div className="mx-auto w-full max-w-5xl px-4 pt-8 sm:px-6 sm:pt-12">
+      <h1 className="font-serif text-[2rem] font-semibold leading-tight text-text sm:text-[2.4rem]">Kết quả đã lưu</h1>
+      <p className="mt-3 max-w-2xl text-lg leading-8 text-muted">
+        Các lần kiểm tra trước, mới nhất ở trên cùng. Chọn mã học sinh để mở lại phiếu kết quả.
+      </p>
       {children}
     </div>
   );
 }
 
 export default function HistoryPage() {
-  const router = useRouter();
   const [rows, setRows] = useState<HistoryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +60,7 @@ export default function HistoryPage() {
       })
       .catch(() => {
         if (!cancelled) {
-          setError("Không thể tải danh sách kết quả. Vui lòng thử lại.");
+          setError("Không tải được danh sách. Hãy kiểm tra kết nối mạng rồi tải lại trang.");
           setLoading(false);
         }
       });
@@ -74,7 +73,9 @@ export default function HistoryPage() {
   if (loading) {
     return (
       <Shell>
-        <p className="mt-6 text-base text-muted">Đang tải…</p>
+        <p className="mt-8 text-base text-muted" role="status">
+          Đang tải danh sách kết quả...
+        </p>
       </Shell>
     );
   }
@@ -82,7 +83,9 @@ export default function HistoryPage() {
   if (error) {
     return (
       <Shell>
-        <p className="mt-6 text-base text-red">{error}</p>
+        <p className="mt-8 text-base text-red" role="alert">
+          {error}
+        </p>
       </Shell>
     );
   }
@@ -90,15 +93,16 @@ export default function HistoryPage() {
   if (rows.length === 0) {
     return (
       <Shell>
-        <div className="mt-6 rounded-2xl border border-dashed border-border bg-surface p-10 text-center">
-          <p className="text-lg font-semibold text-text">Chưa có lần kiểm tra nào</p>
-          <p className="mt-1 text-base text-muted">Kết quả sẽ hiện ở đây sau lần kiểm tra đầu tiên.</p>
+        <div className="mt-8 border-y border-border py-10">
+          <p className="font-serif text-xl font-semibold text-text">Chưa có lần kiểm tra nào</p>
+          <p className="mt-2 text-base text-muted">
+            Sau lần kiểm tra đầu tiên, phiếu kết quả sẽ được lưu ở đây kèm mã học sinh.
+          </p>
           <Link
             href="/screening"
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-base font-semibold text-white hover:bg-accent-2"
+            className="mt-5 inline-flex min-h-12 items-center rounded-md bg-accent px-6 text-base font-semibold text-white hover:bg-accent-2 active:translate-y-px"
           >
-            Bắt đầu kiểm tra
-            <ArrowRightIcon className="h-5 w-5" />
+            Kiểm tra cho một em
           </Link>
         </div>
       </Shell>
@@ -107,86 +111,67 @@ export default function HistoryPage() {
 
   return (
     <Shell>
-      {/* Phone: cards */}
-      <ul className="mt-6 space-y-3 md:hidden">
+      {/* Phones: one entry per child, the code is the link. */}
+      <ul className="mt-8 border-t border-border md:hidden">
         {rows.map((row) => {
-          const pill = finalPill(row.final_output);
+          const o = overall(row.final_output);
+          const a = partLabel(row.model_a_output, "Không có");
+          const b = partLabel(row.model_b_output, "Không có ảnh");
           return (
-            <li key={row.session_id}>
-              <Link
-                href={`/results/${row.session_id}`}
-                className="block rounded-2xl border border-border bg-surface p-4 shadow-sm hover:border-accent/40"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-lg font-semibold text-text">{row.patient_id}</p>
-                    <p className="text-sm text-muted">{formatDate(row.predicted_at)}</p>
-                  </div>
-                  <span className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium ${pill.cls}`}>{pill.text}</span>
-                </div>
-                <p className="mt-3 text-sm text-muted">
-                  Chuyển động tay:{" "}
-                  <span className={partLabel(row.model_a_output).cls}>{partLabel(row.model_a_output).text}</span>
-                  <span className="mx-2" aria-hidden="true">·</span>
-                  Chữ viết:{" "}
-                  <span className={partLabel(row.model_b_output, "Không có ảnh").cls}>
-                    {partLabel(row.model_b_output, "Không có ảnh").text}
-                  </span>
-                </p>
-              </Link>
+            <li key={row.session_id} className="border-b border-border py-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <Link
+                  href={`/results/${row.session_id}`}
+                  className="inline-flex min-h-11 items-center text-lg font-semibold text-accent-2 underline decoration-1 underline-offset-4"
+                >
+                  {row.patient_id}
+                </Link>
+                <span className="text-sm text-muted">{formatDate(row.predicted_at)}</span>
+              </div>
+              <p className={`mt-1 ${o.cls}`}>{o.text}</p>
+              <p className="mt-1 text-sm text-muted">
+                Bàn tay: <span className={a.cls}>{a.text}</span>. Trang vở: <span className={b.cls}>{b.text}</span>.
+              </p>
             </li>
           );
         })}
       </ul>
 
-      {/* Tablet and desktop: table */}
-      <div className="mt-6 hidden overflow-hidden rounded-2xl border border-border bg-surface shadow-sm md:block">
-        <table className="w-full text-left text-[15px]">
-          <thead>
-            <tr className="border-b border-border bg-surface-2 text-sm text-muted">
-              <th scope="col" className="px-5 py-3 font-semibold">Mã học sinh</th>
-              <th scope="col" className="px-5 py-3 font-semibold">Ngày kiểm tra</th>
-              <th scope="col" className="px-5 py-3 font-semibold">Kết quả chung</th>
-              <th scope="col" className="px-5 py-3 font-semibold">Chuyển động tay</th>
-              <th scope="col" className="px-5 py-3 font-semibold">Chữ viết</th>
-              <th scope="col" className="px-5 py-3"><span className="sr-only">Xem</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => {
-              const pill = finalPill(row.final_output);
-              const a = partLabel(row.model_a_output);
-              const b = partLabel(row.model_b_output, "Không có ảnh");
-              return (
-                <tr
-                  key={row.session_id}
-                  onClick={() => router.push(`/results/${row.session_id}`)}
-                  className="cursor-pointer border-b border-border last:border-b-0 hover:bg-accent-soft/40"
-                >
-                  <td className="px-5 py-4 font-semibold text-text">{row.patient_id}</td>
-                  <td className="whitespace-nowrap px-5 py-4 text-muted">{formatDate(row.predicted_at)}</td>
-                  <td className="px-5 py-4">
-                    <span className={`inline-block rounded-full px-3 py-1 text-sm font-medium ${pill.cls}`}>
-                      {pill.text}
-                    </span>
-                  </td>
-                  <td className={`px-5 py-4 ${a.cls}`}>{a.text}</td>
-                  <td className={`px-5 py-4 ${b.cls}`}>{b.text}</td>
-                  <td className="px-5 py-4 text-right">
-                    <Link
-                      href={`/results/${row.session_id}`}
-                      className="font-semibold text-accent-2 hover:underline"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      Xem
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {/* Tablet and desktop: a table, the overall result right after the code because it is what people scan for. */}
+      <table className="mt-8 hidden w-full border-collapse text-left text-[15px] md:table">
+        <thead>
+          <tr className="border-b-2 border-text/70 text-sm text-text">
+            <th scope="col" className="py-3 pr-4 font-semibold">Mã học sinh</th>
+            <th scope="col" className="py-3 pr-4 font-semibold">Kết quả chung</th>
+            <th scope="col" className="py-3 pr-4 font-semibold">Bàn tay lúc viết</th>
+            <th scope="col" className="py-3 pr-4 font-semibold">Trang vở</th>
+            <th scope="col" className="py-3 font-semibold">Ngày kiểm tra</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => {
+            const o = overall(row.final_output);
+            const a = partLabel(row.model_a_output, "Không có");
+            const b = partLabel(row.model_b_output, "Không có ảnh");
+            return (
+              <tr key={row.session_id} className="border-b border-border">
+                <td className="py-4 pr-4">
+                  <Link
+                    href={`/results/${row.session_id}`}
+                    className="inline-flex min-h-11 items-center font-semibold text-accent-2 underline decoration-1 underline-offset-4 hover:decoration-2"
+                  >
+                    {row.patient_id}
+                  </Link>
+                </td>
+                <td className={`py-4 pr-4 ${o.cls}`}>{o.text}</td>
+                <td className={`py-4 pr-4 ${a.cls}`}>{a.text}</td>
+                <td className={`py-4 pr-4 ${b.cls}`}>{b.text}</td>
+                <td className="whitespace-nowrap py-4 text-muted">{formatDate(row.predicted_at)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </Shell>
   );
 }

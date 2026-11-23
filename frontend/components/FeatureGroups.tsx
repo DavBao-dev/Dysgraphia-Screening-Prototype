@@ -58,8 +58,8 @@ const LABELS: Record<string, string> = {
 };
 
 function formatValue(v: number | null | undefined): string {
-  if (v == null) return "—";
-  if (typeof v !== "number" || !Number.isFinite(v)) return "—";
+  if (v == null) return "Không có";
+  if (typeof v !== "number" || !Number.isFinite(v)) return "Không có";
   return v.toFixed(3);
 }
 
@@ -107,7 +107,7 @@ export default function FeatureGroups({ features, title }: FeatureGroupsProps) {
       {groupedEntries.map(({ group, rows }) =>
         rows.length === 0 ? null : (
           <div key={group}>
-            <h5 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
+            <h5 className="mb-1.5 text-sm font-semibold text-text">
               {group}
             </h5>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">

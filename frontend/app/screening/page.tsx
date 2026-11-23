@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import StudentInput from "@/components/StudentInput";
@@ -10,24 +9,22 @@ import TipList from "@/components/TipList";
 import VideoPanel from "@/components/VideoPanel";
 import HandwritingPanel from "@/components/HandwritingPanel";
 import RunButton from "@/components/RunButton";
-import { ArrowLeftIcon, ShieldIcon } from "@/components/Icons";
 import type { DropzoneValue } from "@/components/Dropzone";
 import type { LiveData } from "@/components/LiveCamera";
 import { runScreening } from "@/lib/api";
 import { MIN_LIVE_FRAMES } from "@/lib/constants";
 
 const VIDEO_TIPS = [
-  "Quay từ trên xuống, thấy rõ bàn tay cầm bút",
-  "Trẻ viết bình thường khoảng 15–30 giây",
-  "Đủ ánh sáng, không quay ngược sáng",
-  "Giữ điện thoại cố định, không cần quay mặt trẻ",
+  "Đặt điện thoại phía trên bàn, quay từ trên xuống, thấy rõ bàn tay cầm bút",
+  "Để em chép bài bình thường trong khoảng 15 đến 30 giây",
+  "Ngồi chỗ đủ sáng, tránh quay ngược sáng",
+  "Không cần quay khuôn mặt của em",
 ];
 
 const IMAGE_TIPS = [
-  "Chụp thẳng trang vở, không nghiêng",
-  "Chụp 2–3 dòng trẻ tự viết",
-  "Đủ sáng, không bị bóng tay che",
-  "Ảnh rõ nét, không bị mờ",
+  "Chụp thẳng từ trên xuống, không nghiêng máy",
+  "Chụp 2 hoặc 3 dòng em tự viết",
+  "Không để bóng tay hay bóng điện thoại đè lên chữ",
 ];
 
 export default function ScreeningPage() {
@@ -111,19 +108,16 @@ export default function ScreeningPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
-      <Link href="/" className="inline-flex items-center gap-1.5 text-[15px] font-medium text-accent-2 hover:underline">
-        <ArrowLeftIcon className="h-4 w-4" />
-        Trang chủ
-      </Link>
-
-      <h1 className="mt-3 text-3xl font-bold tracking-tight text-text">Kiểm tra dấu hiệu khó viết</h1>
-      <p className="mt-2 text-lg leading-relaxed text-muted">
-        Làm lần lượt các bước dưới đây. Chỉ có video bàn tay là bắt buộc.
+    <div className="mx-auto w-full max-w-5xl px-4 pb-4 pt-8 sm:px-6 sm:pt-12">
+      <h1 className="font-serif text-[2rem] font-semibold leading-tight text-text sm:text-[2.4rem]">
+        Kiểm tra cho một em
+      </h1>
+      <p className="mt-3 max-w-2xl text-lg leading-8 text-muted">
+        Điền lần lượt ba bước dưới đây. Chỉ có video bàn tay là bắt buộc, phần còn lại có thể bỏ qua.
       </p>
 
-      <div className="mt-8 space-y-5">
-        <StepCard number={1} title="Thông tin của trẻ" optional done={patientId.trim().length > 0}>
+      <div className="mt-8 border-b border-border">
+        <StepCard number={1} title="Em nào đang được kiểm tra?" optional done={patientId.trim().length > 0}>
           <StudentInput
             value={patientId}
             onChange={(v) => {
@@ -135,12 +129,12 @@ export default function ScreeningPage() {
 
         <StepCard
           number={2}
-          title="Video bàn tay khi trẻ viết"
+          title="Video bàn tay khi em viết"
           done={hasModelA}
-          description="Hệ thống xem cách bàn tay di chuyển: tốc độ, độ mượt, những lần dừng bút và độ run tay."
+          description="Hệ thống xem cách bàn tay di chuyển: tốc độ, độ mượt của nét, những lần dừng bút và độ run tay."
         >
-          <div className="space-y-4">
-            <TipList title="Cách quay video" tips={VIDEO_TIPS} />
+          <div className="space-y-5">
+            <TipList title="Cách quay" tips={VIDEO_TIPS} />
             <VideoPanel
               mode={mode}
               onModeChange={handleModeChange}
@@ -155,13 +149,13 @@ export default function ScreeningPage() {
 
         <StepCard
           number={3}
-          title="Ảnh chụp chữ viết"
+          title="Ảnh chụp trang vở"
           optional
           done={!!imageFile}
-          description="Thêm ảnh giúp hệ thống xem cả hình dạng chữ: độ đậm nét và chữ có thẳng hàng hay không."
+          description="Thêm ảnh để hệ thống xem cả hình dạng chữ: nét đậm hay nhạt, chữ có bám dòng hay không."
         >
-          <div className="space-y-4">
-            <TipList title="Cách chụp ảnh" tips={IMAGE_TIPS} />
+          <div className="space-y-5">
+            <TipList title="Cách chụp" tips={IMAGE_TIPS} />
             <HandwritingPanel
               onFile={handleImageFile}
               value={imageFile ? { name: imageFile.name, size: imageFile.size } : undefined}
@@ -170,20 +164,18 @@ export default function ScreeningPage() {
         </StepCard>
       </div>
 
-      <div className="mt-8 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+      <div className="py-8 md:pl-[252px]">
         <RunButton
           disabled={!hasModelA}
           loading={loading}
           error={error ?? undefined}
-          hint={hasModelA ? "Kết quả sẽ hiện ngay sau khi phân tích xong." : "Hãy thêm video bàn tay ở Bước 2 để tiếp tục."}
+          hint={hasModelA ? "Kết quả hiện ngay sau khi phân tích xong." : "Cần có video bàn tay ở Bước 2 thì mới xem được kết quả."}
           onClick={() => void handleRun()}
         />
+        <p className="mt-6 max-w-xl text-sm leading-relaxed text-muted">
+          Video và ảnh không được lưu lại sau khi phân tích. Hệ thống chỉ lưu kết quả kèm mã học sinh bạn nhập.
+        </p>
       </div>
-
-      <p className="mt-5 flex items-start justify-center gap-2 text-center text-sm text-muted">
-        <ShieldIcon className="mt-0.5 h-4 w-4 shrink-0" />
-        Video và ảnh không được lưu lại sau khi phân tích. Hệ thống chỉ lưu kết quả kèm mã học sinh.
-      </p>
     </div>
   );
 }

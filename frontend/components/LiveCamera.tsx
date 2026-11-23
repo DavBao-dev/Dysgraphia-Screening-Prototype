@@ -293,7 +293,7 @@ export default function LiveCamera({ onResult, onRetake }: LiveCameraProps) {
   return (
     <div>
       <div
-        className={`relative overflow-hidden rounded-xl ${
+        className={`relative overflow-hidden rounded-sheet ${
           status === "recording" && frameCount > 0
             ? "ring-2 ring-green/70"
             : "ring-1 ring-border"
@@ -328,7 +328,7 @@ export default function LiveCamera({ onResult, onRetake }: LiveCameraProps) {
       {status === "idle" && (
         <ol className="mt-3 list-decimal space-y-1 pl-5 text-[15px] text-muted">
           <li>Đặt camera sao cho thấy rõ bàn tay cầm bút và trang giấy.</li>
-          <li>Bấm <strong className="text-text">Bắt đầu quay</strong>, cho trẻ viết bình thường khoảng 15–30 giây.</li>
+          <li>Bấm <strong className="text-text">Bắt đầu quay</strong>, cho em viết bình thường khoảng 15 đến 30 giây.</li>
           <li>Bấm <strong className="text-text">Dừng quay</strong> khi xong.</li>
         </ol>
       )}
@@ -367,7 +367,7 @@ export default function LiveCamera({ onResult, onRetake }: LiveCameraProps) {
           type="button"
           onClick={() => void start()}
           disabled={status === "recording" || status === "loading" || status === "processing" || !scriptsReady}
-          className={`rounded-xl px-5 py-2.5 text-[15px] font-semibold ${
+          className={`min-h-11 rounded-md px-5 text-[15px] font-semibold ${
             status === "recording" || status === "loading" || status === "processing" || !scriptsReady
               ? "cursor-not-allowed bg-surface-2 text-muted"
               : "bg-accent text-white hover:bg-accent-2"
@@ -379,7 +379,7 @@ export default function LiveCamera({ onResult, onRetake }: LiveCameraProps) {
           type="button"
           onClick={stop}
           disabled={status !== "recording"}
-          className={`rounded-xl px-5 py-2.5 text-[15px] font-semibold ${
+          className={`min-h-11 rounded-md px-5 text-[15px] font-semibold ${
             status === "recording"
               ? "border border-border bg-surface text-text hover:bg-surface-2"
               : "cursor-not-allowed bg-surface-2 text-muted"
@@ -391,7 +391,7 @@ export default function LiveCamera({ onResult, onRetake }: LiveCameraProps) {
           <button
             type="button"
             onClick={retake}
-            className="rounded-xl border border-border bg-surface px-5 py-2.5 text-[15px] font-semibold text-text hover:bg-surface-2"
+            className="min-h-11 rounded-md border border-border bg-surface px-5 text-[15px] font-semibold text-text hover:bg-surface-2 active:bg-border"
           >
             Quay lại
           </button>

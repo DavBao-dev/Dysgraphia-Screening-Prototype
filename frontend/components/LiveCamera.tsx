@@ -83,7 +83,6 @@ export default function LiveCamera({ onResult, onRetake }: LiveCameraProps) {
 
   const [status, setStatus] = useState<Status>("idle");
   const [frameCount, setFrameCount] = useState(0);
-  const [fps, setFps] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [scriptsReady, setScriptsReady] = useState(false);
 
@@ -201,7 +200,6 @@ export default function LiveCamera({ onResult, onRetake }: LiveCameraProps) {
     startingRef.current = true;
     setError(null);
     setFrameCount(0);
-    setFps(null);
     bufferRef.current = [];
     timestampsRef.current = [];
     hasResultsRef.current = false;
@@ -265,7 +263,6 @@ export default function LiveCamera({ onResult, onRetake }: LiveCameraProps) {
       handsRef.current = null;
     }
     const medianFps = computeMedianFps(timestampsRef.current);
-    setFps(medianFps);
     onResult({ landmarks: bufferRef.current, fps: medianFps });
     setStatus("processing");
     window.clearTimeout(procTimerRef.current);
@@ -277,7 +274,6 @@ export default function LiveCamera({ onResult, onRetake }: LiveCameraProps) {
     runningRef.current = false;
     cancelAnimationFrame(rafRef.current);
     setFrameCount(0);
-    setFps(null);
     setError(null);
     onRetake?.();
     setStatus("idle");
@@ -287,9 +283,9 @@ export default function LiveCamera({ onResult, onRetake }: LiveCameraProps) {
   }
 
   const stateMeta: Record<Status, { label: string; dot: string }> = {
-    idle: { label: "Chuẩn bị", dot: "bg-muted" },
-    loading: { label: "Đang chuẩn bị", dot: "bg-muted" },
-    recording: { label: "Đang ghi", dot: "bg-accent" },
+    idle: { label: "Sẵn sàng", dot: "bg-muted" },
+    loading: { label: "Đang mở camera", dot: "bg-muted" },
+    recording: { label: "Đang quay", dot: "bg-red" },
     processing: { label: "Đang xử lý", dot: "bg-amber" },
     done: { label: "Hoàn tất", dot: "bg-green" },
   };
@@ -297,7 +293,7 @@ export default function LiveCamera({ onResult, onRetake }: LiveCameraProps) {
   return (
     <div>
       <div
-        className={`relative overflow-hidden rounded-lg ${
+        className={`relative overflow-hidden rounded-sheet ${
           status === "recording" && frameCount > 0
             ? "ring-2 ring-green/70"
             : "ring-1 ring-border"
@@ -319,88 +315,85 @@ export default function LiveCamera({ onResult, onRetake }: LiveCameraProps) {
         />
       </div>
 
-      <div className="mt-3 flex items-center gap-2">
-        <span className="flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1 text-xs text-muted">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className="flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1 text-sm text-muted">
           <span className={`h-2 w-2 rounded-full ${stateMeta[status].dot}`} aria-hidden="true" />
           {stateMeta[status].label}
         </span>
         {!scriptsReady && !error && (
-          <p className="text-sm text-muted">Đang chuẩn bị camera và nhận diện bàn tay...</p>
+          <p className="text-[15px] text-muted">Đang chuẩn bị camera và nhận diện bàn tay...</p>
         )}
       </div>
 
       {status === "idle" && (
-        <div className="mt-3">
-          <p className="text-sm font-medium text-text">Sẵn sàng nhé!</p>
-          <ul className="mt-1.5 space-y-1 text-sm text-muted">
-            <li>Giữ bàn tay trong khung hình, đủ ánh sáng.</li>
-            <li>Tránh đứng ngược sáng để dễ nhận diện.</li>
-            <li>Bấm Bắt đầu ghi rồi vẫy nhẹ bàn tay vài giây.</li>
-          </ul>
-        </div>
+        <ol className="mt-3 list-decimal space-y-1 pl-5 text-[15px] text-muted">
+          <li>Đặt camera sao cho thấy rõ bàn tay cầm bút và trang giấy.</li>
+          <li>Bấm <strong className="text-text">Bắt đầu quay</strong>, cho em viết bình thường khoảng 15 đến 30 giây.</li>
+          <li>Bấm <strong className="text-text">Dừng quay</strong> khi xong.</li>
+        </ol>
       )}
 
       {status === "loading" && (
-        <p className="mt-3 text-sm text-muted">Đang mở camera, một chút nữa thôi...</p>
+        <p className="mt-3 text-[15px] text-muted">Đang mở camera, một chút nữa thôi...</p>
       )}
 
       {status === "recording" && (
-        <p className="mt-3 text-sm text-muted">
+        <p className="mt-3 text-[15px] text-muted">
           {frameCount > 0 ? (
             <span className="flex items-center gap-1.5 font-medium text-green">
               <span className="h-2 w-2 animate-pulse rounded-full bg-green" aria-hidden="true" />
-              Đã nhận diện bàn tay — đã ghi {frameCount} khung hình.
+              Đã thấy bàn tay, đang quay...
             </span>
           ) : (
-            "Chưa thấy bàn tay. Đưa bàn tay vào khung hình nhé."
+            "Chưa thấy bàn tay. Hãy đưa bàn tay cầm bút vào khung hình."
           )}
         </p>
       )}
 
       {status === "processing" && (
-        <p className="mt-3 text-sm text-amber">Đang xử lý dữ liệu chuyển động...</p>
+        <p className="mt-3 text-[15px] text-amber">Đang xử lý đoạn vừa quay...</p>
       )}
 
       {status === "done" && (
-        <p className="mt-3 text-sm text-green">
-          Hoàn tất! Đã ghi nhận {frameCount} khung hình có bàn tay (FPS ~{fps ?? 30}).
+        <p className="mt-3 text-[15px] font-medium text-green">
+          Đã quay xong ({frameCount} khung hình có bàn tay). Bạn có thể bấm “Xem kết quả” ở cuối trang.
         </p>
       )}
 
-      {error && <p className="mt-3 text-sm text-red">{error}</p>}
+      {error && <p role="alert" className="mt-3 text-[15px] text-red">{error}</p>}
 
       <div className="mt-4 flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => void start()}
           disabled={status === "recording" || status === "loading" || status === "processing" || !scriptsReady}
-          className={`rounded-lg px-4 py-2 text-sm font-medium ${
+          className={`min-h-11 rounded-md px-5 text-[15px] font-semibold ${
             status === "recording" || status === "loading" || status === "processing" || !scriptsReady
               ? "cursor-not-allowed bg-surface-2 text-muted"
               : "bg-accent text-white hover:bg-accent-2"
           }`}
         >
-          Bắt đầu ghi
+          Bắt đầu quay
         </button>
         <button
           type="button"
           onClick={stop}
           disabled={status !== "recording"}
-          className={`rounded-lg px-4 py-2 text-sm font-medium ${
+          className={`min-h-11 rounded-md px-5 text-[15px] font-semibold ${
             status === "recording"
               ? "border border-border bg-surface text-text hover:bg-surface-2"
               : "cursor-not-allowed bg-surface-2 text-muted"
           }`}
         >
-          Dừng ghi
+          Dừng quay
         </button>
         {status === "done" && (
           <button
             type="button"
             onClick={retake}
-            className="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-medium text-text hover:bg-surface"
+            className="min-h-11 rounded-md border border-border bg-surface px-5 text-[15px] font-semibold text-text hover:bg-surface-2 active:bg-border"
           >
-            Ghi lại
+            Quay lại
           </button>
         )}
       </div>

@@ -1,26 +1,24 @@
 import type { Quality } from "@/types/screening";
 
 const LABELS: Array<[string, (q: Quality) => string]> = [
-  ["Hợp lệ", (q) => (q.valid ? "Có" : "Không")],
-  ["Số frame", (q) => (q.frames != null ? String(q.frames) : "—")],
-  ["FPS", (q) => (q.fps != null ? q.fps.toFixed(2) : "—")],
-  ["Thời lượng (s)", (q) => (q.duration != null ? q.duration.toFixed(2) : "—")],
+  ["Đủ dữ liệu để phân tích", (q) => (q.valid ? "Có" : "Không")],
+  ["Số khung hình có bàn tay", (q) => (q.frames != null ? String(q.frames) : "Không có")],
+  ["Khung hình/giây", (q) => (q.fps != null ? q.fps.toFixed(0) : "Không có")],
+  ["Thời lượng (giây)", (q) => (q.duration != null ? q.duration.toFixed(1) : "Không có")],
 ];
 
 export default function StatusCard({ quality }: { quality: Quality | null }) {
   if (!quality) {
     return (
-      <div className="mt-2 rounded-lg border border-border bg-surface-2 p-3 text-sm text-muted">
-        Không có dữ liệu chất lượng.
+      <div className="rounded-lg border border-border bg-surface p-3 text-sm text-muted">
+        Không có dữ liệu chất lượng video.
       </div>
     );
   }
 
   return (
-    <div className="mt-2 rounded-lg border border-border bg-surface-2 p-3">
-      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-        Chất lượng dữ liệu
-      </h4>
+    <div className="rounded-lg border border-border bg-surface p-3">
+      <h4 className="mb-2 text-sm font-semibold text-text">Chất lượng video</h4>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
         {LABELS.map(([label, fmt]) => (
           <div key={label} className="contents">

@@ -14,6 +14,11 @@ interface VideoPanelProps {
   onRetake?: () => void;
 }
 
+const MODES = [
+  { id: "video" as const, label: "Tải video đã quay" },
+  { id: "live" as const, label: "Quay bằng camera máy này" },
+];
+
 export default function VideoPanel({
   mode,
   onModeChange,
@@ -27,19 +32,26 @@ export default function VideoPanel({
 
   return (
     <div>
-      <div className="inline-flex flex-wrap rounded-lg bg-surface-2 p-1">
-        {(["video", "live"] as const).map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => onModeChange(m)}
-            className={`rounded-md px-4 py-2 text-sm font-medium ${
-              mode === m ? "bg-surface text-text" : "text-muted hover:text-text"
-            }`}
-          >
-            {m === "video" ? "Tải video lên" : "Camera trực tiếp"}
-          </button>
-        ))}
+      {/* Two-way switch built from pressed buttons (no tab semantics, so no arrow-key contract to break). */}
+      <div role="group" aria-label="Cách đưa video vào" className="flex flex-wrap gap-2">
+        {MODES.map(({ id, label }) => {
+          const active = mode === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onModeChange(id)}
+              className={`min-h-11 rounded-md border px-4 text-[15px] font-medium ${
+                active
+                  ? "border-accent bg-accent-soft text-accent-2"
+                  : "border-field bg-surface text-muted hover:border-accent hover:text-text active:bg-surface-2"
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       <div className="mt-4">
@@ -54,9 +66,7 @@ export default function VideoPanel({
           <div>
             <LiveCamera onResult={(data) => onLiveData(data)} onRetake={onRetake} />
             {frameCount > 0 && frameCount < MIN_LIVE_FRAMES && (
-              <p className="mt-3 text-sm text-amber">
-                Cần ít nhất {MIN_LIVE_FRAMES} khung hình có bàn tay. Ghi thêm một chút nữa nhé.
-              </p>
+              <p className="mt-3 text-[15px] text-amber">Chưa đủ hình ảnh bàn tay. Hãy quay thêm một chút nữa.</p>
             )}
           </div>
         )}

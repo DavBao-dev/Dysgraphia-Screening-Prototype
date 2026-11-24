@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
-import ModelCard from "@/components/ModelCard";
+import PartRow from "@/components/PartRow";
 import DetailsSection from "@/components/DetailsSection";
+import StatusCard from "@/components/StatusCard";
+import FeatureGroups from "@/components/FeatureGroups";
 import { getSession } from "@/lib/api";
 import type { ApiError } from "@/lib/api";
 import type { SessionDetail } from "@/types/screening";
@@ -22,6 +24,51 @@ function formatDate(raw: string): string {
   } catch {
     return raw;
   }
+}
+
+interface Verdict {
+  title: string;
+  summary: string;
+  steps: string[];
+  titleCls: string;
+}
+
+function verdictFor(prediction: number | null | undefined): Verdict {
+  if (prediction === 1) {
+    return {
+      title: "Nên theo dõi thêm",
+      summary:
+        "Hệ thống thấy một vài dấu hiệu có thể liên quan đến khó viết. Điều này không có nghĩa là em bị khó viết, nhưng em nên được quan sát kỹ hơn trong thời gian tới.",
+      steps: [
+        "Giáo viên và phụ huynh trao đổi với nhau về việc viết của em ở lớp và ở nhà.",
+        "Quan sát thêm trong 2 đến 4 tuần: cách cầm bút, tốc độ viết, chữ có bám dòng không, em có hay kêu mỏi tay không.",
+        "Nếu các dấu hiệu vẫn còn, đưa em gặp chuyên gia để được đánh giá, ví dụ chuyên viên tâm lý học đường, chuyên viên hoạt động trị liệu hoặc bác sĩ nhi khoa phát triển.",
+      ],
+      titleCls: "text-accent-2",
+    };
+  }
+  if (prediction === 0) {
+    return {
+      title: "Chưa thấy dấu hiệu đáng lo",
+      summary: "Ở lần kiểm tra này, cách viết của em chưa cho thấy dấu hiệu khó viết rõ rệt.",
+      steps: [
+        "Tiếp tục cho em viết đều đặn mỗi ngày.",
+        "Nếu em vẫn gặp khó khăn kéo dài, như viết rất chậm, chữ khó đọc hay hay mỏi tay, hãy kiểm tra lại sau vài tuần hoặc trao đổi với giáo viên.",
+        "Một lần kiểm tra không phát hiện được mọi trường hợp. Những gì thầy cô và gia đình quan sát hằng ngày vẫn quan trọng nhất.",
+      ],
+      titleCls: "text-green",
+    };
+  }
+  return {
+    title: "Chưa đủ thông tin",
+    summary: "Hệ thống chưa có đủ dữ liệu để đưa ra kết quả. Hãy thử lại với một video quay rõ bàn tay hơn.",
+    steps: ["Xem lại phần cách quay video trong trang Hướng dẫn, rồi kiểm tra lại."],
+    titleCls: "text-text",
+  };
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return <div className="mx-auto w-full max-w-3xl px-4 pt-8 sm:px-6 sm:pt-12">{children}</div>;
 }
 
 export default function ResultsPage() {
@@ -43,165 +90,164 @@ export default function ResultsPage() {
       })
       .catch((e: ApiError) => {
         if (!cancelled) {
-          if (e.status === 404) {
-            setError("Không tìm thấy phiên sàng lọc.");
-          } else {
-            setError("Không thể tải kết quả sàng lọc.");
-          }
+          setError(
+            e.status === 404
+              ? "Không tìm thấy phiếu kết quả này. Có thể máy chủ đã được khởi động lại và xoá dữ liệu cũ."
+              : "Không tải được phiếu kết quả. Hãy kiểm tra kết nối mạng rồi tải lại trang."
+          );
           setLoading(false);
         }
       });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   if (loading) {
     return (
-      <main className="mx-auto w-full max-w-[960px] flex-1 px-6 py-10">
-        <p className="text-sm text-muted">Đang tải kết quả…</p>
-      </main>
+      <Shell>
+        <p className="text-base text-muted" role="status">
+          Đang tải phiếu kết quả...
+        </p>
+      </Shell>
     );
   }
 
-  if (error) {
+  if (error || !data) {
     return (
-      <main className="mx-auto w-full max-w-[960px] flex-1 px-6 py-10">
-        <p className="text-sm text-red">{error}</p>
-        <Link href="/history" className="mt-4 inline-block text-sm text-accent hover:underline">
-          ← Về lịch sử
+      <Shell>
+        <h1 className="font-serif text-2xl font-semibold text-text">Không mở được phiếu kết quả</h1>
+        <p className="mt-3 text-base text-text">{error ?? "Không tải được phiếu kết quả."}</p>
+        <Link
+          href="/history"
+          className="mt-4 inline-flex min-h-11 items-center text-base font-medium text-accent-2 underline underline-offset-4"
+        >
+          Về danh sách kết quả đã lưu
         </Link>
-      </main>
+      </Shell>
     );
   }
 
-  if (!data) return null;
-
-  const ensemble = data.ensemble;
   const modelA = data.model_a;
   const modelB = data.model_b;
-
-  const prediction = ensemble?.prediction;
-  const verdict = (() => {
-    if (prediction === 1) {
-      return {
-        primary: "Có dấu hiệu cần được xem xét thêm",
-        detail:
-          "Hệ thống phát hiện các mẫu có thể liên quan đến khó viết và khuyến nghị xem xét thêm.",
-        descriptor: "Tín hiệu sàng lọc cao hơn",
-        bg: "border-amber/30 bg-amber/10",
-        textColor: "text-amber",
-      };
-    }
-    if (prediction === 0) {
-      return {
-        primary: "Chưa phát hiện dấu hiệu đáng chú ý",
-        detail: "Kết quả sàng lọc hiện chưa cho thấy tín hiệu nổi bật.",
-        descriptor: "Tín hiệu sàng lọc thấp",
-        bg: "border-green/30 bg-green/10",
-        textColor: "text-green",
-      };
-    }
-    return {
-      primary: "Cần đánh giá thêm",
-      detail: "Chưa đủ dữ liệu để tổng hợp kết quả.",
-      descriptor: null,
-      bg: "border-violet/30 bg-violet/10",
-      textColor: "text-violet",
-    };
-  })();
+  const verdict = verdictFor(data.ensemble?.prediction);
 
   return (
-    <main className="mx-auto w-full max-w-[960px] flex-1 px-6 py-10">
-      <Link href="/history" className="mb-4 inline-block text-sm text-accent hover:underline">
-        ← Lịch sử sàng lọc
-      </Link>
-
-      <h1 className="text-3xl font-bold tracking-tight text-text">Kết quả sàng lọc</h1>
-      <p className="mt-1 text-sm text-muted">Học sinh: {data.patient_id}</p>
-      <p className="text-sm text-muted">Thời điểm: {formatDate(data.created_at)}</p>
-
-      <div className={`mt-6 rounded-xl border p-5 ${verdict.bg}`}>
-        <p className={`text-xl font-semibold ${verdict.textColor}`}>{verdict.primary}</p>
-        <p className="mt-1.5 text-sm text-muted">{verdict.detail}</p>
-        {verdict.descriptor && (
-          <p className="mt-2 text-xs text-muted">{verdict.descriptor}</p>
-        )}
-        <p className="mt-3 border-t border-border/40 pt-3 text-xs text-muted">
-          Đây là công cụ sàng lọc, không phải chẩn đoán.
-        </p>
-      </div>
-
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <ModelCard
-          title="Chuyển động tay"
-          badge="Bắt buộc"
-          badgeVariant="accent"
-          available={modelA?.available ?? false}
-          prediction={modelA?.prediction ?? null}
-          score={modelA?.score ?? null}
-          quality={modelA?.quality ?? null}
-          features={modelA?.features ?? null}
-          technicalName="Random Forest (28 đặc trưng từ MediaPipe Hands)"
-          unavailableText="Chưa có dữ liệu chuyển động tay."
-        />
-        <ModelCard
-          title="Chữ viết tay"
-          badge="Tùy chọn"
-          badgeVariant="neutral"
-          available={modelB?.available ?? false}
-          prediction={modelB?.prediction ?? null}
-          score={modelB?.score ?? null}
-          handcrafted={
-            modelB?.handcrafted
-              ? {
-                  ink_thickness_mean: modelB.handcrafted.ink_thickness_mean,
-                  baseline_deviation: modelB.handcrafted.baseline_deviation,
-                }
-              : null
-          }
-          technicalName="ResNet50 + MLP (OpenVINO)"
-          unavailableText="Chưa cung cấp mẫu chữ viết tay."
-        />
-      </div>
-
-      <section className="mt-6 rounded-xl border border-border bg-surface p-5">
-        <h2 className="text-base font-semibold text-text">
-          Chúng tôi đã phân tích điều gì?
-        </h2>
-        <div className="mt-3 grid gap-4 sm:grid-cols-2">
-          <div>
-            <h3 className="text-sm font-semibold text-text">Chuyển động tay</h3>
-            <ul className="mt-1.5 list-disc space-y-1 pl-4 text-sm text-muted">
-              <li>Tốc độ chuyển động của bàn tay</li>
-              <li>Độ mượt và nhất quán của chuyển động</li>
-              <li>Các quãng dừng hoặc khựng</li>
-              <li>Các mẫu rung lắc nhẹ (run)</li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-text">Chữ viết tay</h3>
-            <ul className="mt-1.5 list-disc space-y-1 pl-4 text-sm text-muted">
-              <li>Độ dày của nét mực</li>
-              <li>Mức độ thẳng hàng của dòng chữ</li>
-            </ul>
-          </div>
+    <Shell>
+      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
+        <Link
+          href="/history"
+          className="inline-flex min-h-11 items-center text-[15px] font-medium text-accent-2 underline decoration-1 underline-offset-4 hover:decoration-2"
+        >
+          Kết quả đã lưu
+        </Link>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="min-h-11 rounded-md border border-border bg-surface px-4 text-[15px] font-semibold text-text hover:bg-surface-2 active:bg-border"
+          >
+            In phiếu
+          </button>
+          <Link
+            href="/screening"
+            className="inline-flex min-h-11 items-center rounded-md bg-accent px-4 text-[15px] font-semibold text-white hover:bg-accent-2 active:translate-y-px"
+          >
+            Kiểm tra cho em khác
+          </Link>
         </div>
-      </section>
+      </div>
 
-      {ensemble?.method && (
-        <div className="mt-4">
-          <DetailsSection title="Chi tiết kỹ thuật">
-            <p className="text-sm text-muted">
-              Kết quả chung được tổng hợp từ các tín hiệu phía trên (phương thức:{" "}
-              {ensemble.method}).
+      {/* The result slip: the one raised element on the page, a sheet lying on the desk. */}
+      <article className="mt-5 overflow-hidden rounded-sheet border border-border bg-surface shadow-[0_1px_2px_rgba(42,34,56,0.06),0_8px_24px_rgba(42,34,56,0.08)] print:shadow-none">
+        <header className="o-li border-b border-border py-5 pl-14 pr-5 sm:pl-16">
+          {/* Text on the ruled strip uses the main ink colour: muted grey drops below 4.5:1 where it crosses a strong rule. */}
+          <p className="text-sm font-semibold text-text">Phiếu kết quả sàng lọc</p>
+          <h1 className="mt-1 font-serif text-2xl font-semibold text-text">Mã học sinh: {data.patient_id}</h1>
+          <p className="mt-1 text-[15px] text-text">Ngày kiểm tra: {formatDate(data.created_at)}</p>
+        </header>
+
+        <div className="px-5 py-7 sm:px-8">
+          <h2 className={`font-serif text-[1.9rem] font-semibold leading-tight ${verdict.titleCls}`}>{verdict.title}</h2>
+          <p className="mt-3 text-lg leading-8 text-text">{verdict.summary}</p>
+
+          <h3 className="mt-8 text-lg font-semibold text-text">Nên làm gì tiếp theo</h3>
+          <ol className="mt-3 list-decimal space-y-3 pl-6 text-base leading-7 text-text marker:font-semibold marker:text-accent">
+            {verdict.steps.map((step) => (
+              <li key={step} className="pl-1">
+                {step}
+              </li>
+            ))}
+          </ol>
+          {data.ensemble?.prediction === 1 && (
+            <p className="mt-4 text-base leading-7 text-muted">
+              Khó viết không liên quan đến trí thông minh. Phát hiện sớm giúp em được hỗ trợ kịp thời.
             </p>
-          </DetailsSection>
-        </div>
-      )}
+          )}
 
-      <div className="mt-6 rounded-xl border border-border bg-surface p-4">
-        <p className="text-sm text-muted">{data.disclaimer}</p>
-      </div>
-    </main>
+          <h3 className="mt-8 text-lg font-semibold text-text">Kết quả từng phần</h3>
+          <dl className="mt-2 border-b border-rule">
+            <PartRow
+              title="Bàn tay lúc viết"
+              lookedAt="Tốc độ và độ mượt của nét, những lần dừng bút và độ run của bàn tay."
+              available={modelA?.available ?? false}
+              prediction={modelA?.prediction ?? null}
+              unavailableText="Không có dữ liệu chuyển động tay."
+            />
+            <PartRow
+              title="Trang vở"
+              lookedAt="Hình dạng chữ, độ đậm của nét và chữ có bám dòng hay không."
+              available={modelB?.available ?? false}
+              prediction={modelB?.prediction ?? null}
+              unavailableText="Lần này không có ảnh trang vở. Lần sau thêm ảnh để kết quả đầy đủ hơn."
+            />
+          </dl>
+
+          <p className="mt-8 text-[15px] leading-7 text-muted">
+            Phiếu này chỉ là gợi ý sàng lọc, không phải chẩn đoán. Chỉ chuyên gia mới xác định được em có bị khó viết hay
+            không. Hãy dùng phiếu làm cơ sở để gia đình, nhà trường và chuyên gia trao đổi với nhau.
+          </p>
+
+          <div className="print:hidden">
+            <DetailsSection title="Chi tiết kỹ thuật">
+              <p className="font-semibold text-text">Bàn tay lúc viết</p>
+              <p className="mt-1">MediaPipe Hands (21 điểm trên bàn tay) và Random Forest, 18 đặc trưng vận động.</p>
+              {modelA?.score != null && <p className="mt-1">Điểm của mô hình: {(modelA.score * 100).toFixed(1)}% (ngưỡng 50%)</p>}
+              {modelA?.quality && (
+                <div className="mt-2">
+                  <StatusCard quality={modelA.quality} />
+                </div>
+              )}
+              {modelA?.features && Object.keys(modelA.features).length > 0 && (
+                <div className="mt-3">
+                  <FeatureGroups features={modelA.features} />
+                </div>
+              )}
+              <p className="mt-5 font-semibold text-text">Trang vở</p>
+              {modelB?.available ? (
+                <>
+                  <p className="mt-1">ResNet50 và MLP (ONNX Runtime), kèm 2 đặc trưng nét chữ.</p>
+                  {modelB.score != null && <p className="mt-1">Điểm của mô hình: {(modelB.score * 100).toFixed(1)}% (ngưỡng 50%)</p>}
+                  {modelB.handcrafted && (
+                    <div className="mt-3">
+                      <FeatureGroups
+                        features={{
+                          ink_thickness_mean: modelB.handcrafted.ink_thickness_mean,
+                          baseline_deviation: modelB.handcrafted.baseline_deviation,
+                        }}
+                      />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="mt-1">Không có ảnh.</p>
+              )}
+              {data.ensemble?.method && <p className="mt-5">Cách kết hợp hai phần: {data.ensemble.method}</p>}
+            </DetailsSection>
+          </div>
+        </div>
+      </article>
+    </Shell>
   );
 }

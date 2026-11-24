@@ -11,28 +11,16 @@ export default function DetailsSection({ title = "Xem chi tiết", children }: D
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="mt-4">
+    <div className="mt-6">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 text-sm text-muted hover:text-text"
+        className="min-h-11 text-left text-[15px] font-medium text-accent-2 underline decoration-1 underline-offset-4 hover:decoration-2"
         aria-expanded={open}
       >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
-          aria-hidden="true"
-        >
-          <path d="M6 9l6 6 6-6" />
-        </svg>
-        {title}
+        {open ? `Ẩn ${title.toLowerCase()}` : title}
       </button>
-      {open && <div className="mt-2 rounded-lg bg-surface-2/60 p-3 text-sm text-muted">{children}</div>}
+      {open && <div className="mt-2 rounded-sheet bg-surface-2 p-4 text-sm leading-relaxed text-muted">{children}</div>}
     </div>
   );
 }

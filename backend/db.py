@@ -86,15 +86,28 @@ def new_session(patient_id: str) -> str:
     return session_id
 
 
-def save_model_a(session_id: str, features: dict, output=None, note: str = ""):
-    """Luu cac features (JSON) va ket qua cua Model A."""
+def save_model_a(session_id: str, features: dict, output=None, note: str = "", meta: dict | None = None):
+    """Luu cac features (JSON) va ket qua cua Model A.
+
+    `meta` (diem, trang thai, chat luong video) duoc ghi dang JSON vao cot model_a_note, de khong phai
+    doi cau truc file CSV; cac dong cu chi co ghi chu thuong (khong phai JSON) van doc duoc.
+    """
     _append_row("model_a_features", {
         "feature_id": str(uuid.uuid4()),
         "session_id": session_id,
         "features_json": json.dumps(features),
         "model_a_output": output,
-        "model_a_note": note,
+        "model_a_note": json.dumps(meta, ensure_ascii=False) if meta is not None else note,
     })
+
+
+def _meta_from_note(note) -> dict | None:
+    """Doc lai `meta` da luu trong model_a_note; None neu day la ghi chu thuong cua ban ghi cu."""
+    try:
+        meta = json.loads(note) if note else None
+    except (TypeError, ValueError):
+        return None
+    return meta if isinstance(meta, dict) else None
 
 
 def save_model_b(session_id: str, ink_thickness_mean: float, baseline_deviation: float, output: int, probability: float):
@@ -138,9 +151,16 @@ def get_history(limit: int = 50):
         r["session_id"]: r["patient_id"] for r in _read_rows("sessions")
     }
 
+    # Chat luong video cua Model A (da luu trong meta); None voi ban ghi cu khong co meta.
+    valid_by_session = {}
+    for a in _read_rows("model_a_features"):
+        quality = (_meta_from_note(a.get("model_a_note")) or {}).get("quality") or {}
+        valid_by_session[a["session_id"]] = quality.get("valid")
+
     rows = []
     for p in reversed(_read_rows("predictions")):  # moi nhat truoc
         rows.append({
+            "model_a_valid": valid_by_session.get(p["session_id"]),
             "predicted_at": p["predicted_at"],
             "session_id": p["session_id"],
             "patient_id": patient_by_session.get(p["session_id"], ""),
@@ -173,6 +193,7 @@ def get_session(session_id: str) -> dict | None:
         "model_a": {
             "output": _to_int_or_none(a["model_a_output"]) if a else None,
             "features_json": json.loads(a["features_json"]) if a else None,
+            "meta": _meta_from_note(a.get("model_a_note")) if a else None,
         },
         "model_b": {
             "output": _to_int_or_none(b["model_b_output"]) if b else None,

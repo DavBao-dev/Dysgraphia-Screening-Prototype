@@ -111,3 +111,82 @@ def test_history_list():
 def test_history_missing_session_404():
     assert client.get("/api/history/nope").status_code == 404
 
+
+
+def _still_landmarks_json() -> str:
+    kp = np.zeros((60, 21, 3), dtype=np.float64)
+    for j in range(21):
+        kp[:, j, :] = [0.5 + 0.01 * j, 0.5, 0.0]
+    return json.dumps({"landmarks": kp.tolist(), "fps": 30.0})
+
+
+def test_saved_session_keeps_model_a_score_and_quality():
+    r = client.post(
+        "/api/screening",
+        data={"patient_id": "keep1", "model_a_source": "live", "landmarks_json": _landmarks_json()},
+    )
+    assert r.status_code == 200, r.text
+    live = r.json()["model_a"]
+    saved = client.get(f"/api/history/{r.json()['session_id']}").json()["model_a"]
+    assert saved["score"] == live["score"]
+    assert saved["status"] == live["status"]
+    assert saved["quality"] == live["quality"]
+    assert saved["prediction"] == live["prediction"]
+
+
+def test_saved_session_of_an_unusable_video_is_marked_invalid():
+    r = client.post(
+        "/api/screening",
+        data={"patient_id": "keep2", "model_a_source": "live", "landmarks_json": _still_landmarks_json()},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["model_a"]["quality"]["valid"] is False
+    saved = client.get(f"/api/history/{r.json()['session_id']}").json()["model_a"]
+    assert saved["quality"]["valid"] is False
+    assert saved["status"] == r.json()["model_a"]["status"]
+
+
+def test_saved_features_do_not_leak_the_stored_meta():
+    r = client.post(
+        "/api/screening",
+        data={"patient_id": "keep3", "model_a_source": "live", "landmarks_json": _landmarks_json()},
+    )
+    features = client.get(f"/api/history/{r.json()['session_id']}").json()["model_a"]["features"]
+    assert features == r.json()["model_a"]["features"]
+
+
+def test_old_session_without_stored_meta_still_loads():
+    import backend.db as db
+
+    sid = db.new_session("old1")
+    db.save_model_a(sid, {"speed_mean": 0.1}, 0, note="Model A: Random Forest (writesense)")
+    db.save_prediction(sid, 0, None, 0, "majority_vote (majority)")
+    saved = client.get(f"/api/history/{sid}").json()["model_a"]
+    assert saved["score"] is None and saved["quality"] is None and saved["status"] is None
+    assert saved["features"] == {"speed_mean": 0.1}
+
+
+def _history_row(session_id: str) -> dict:
+    return next(r for r in client.get("/api/history?limit=500").json() if r["session_id"] == session_id)
+
+
+def test_history_list_flags_whether_the_video_was_usable():
+    ok = client.post(
+        "/api/screening",
+        data={"patient_id": "hv1", "model_a_source": "live", "landmarks_json": _landmarks_json()},
+    ).json()["session_id"]
+    bad = client.post(
+        "/api/screening",
+        data={"patient_id": "hv2", "model_a_source": "live", "landmarks_json": _still_landmarks_json()},
+    ).json()["session_id"]
+    assert _history_row(ok)["model_a_valid"] is True
+    assert _history_row(bad)["model_a_valid"] is False
+
+
+def test_history_list_of_an_old_session_has_unknown_video_quality():
+    import backend.db as db
+
+    sid = db.new_session("old2")
+    db.save_model_a(sid, {"speed_mean": 0.1}, 0, note="Model A: Random Forest (writesense)")
+    db.save_prediction(sid, 0, None, 0, "majority_vote (majority)")
+    assert _history_row(sid)["model_a_valid"] is None

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { getHistory } from "@/lib/api";
+import { listedRow } from "@/lib/historyRow";
 import type { HistoryRow } from "@/types/screening";
 
 function partLabel(p: number | null, missing: string): { text: string; cls: string } {
@@ -15,7 +16,7 @@ function partLabel(p: number | null, missing: string): { text: string; cls: stri
 function overall(p: number | null): { text: string; cls: string } {
   if (p === 1) return { text: "Nên theo dõi thêm", cls: "text-accent-2 font-semibold" };
   if (p === 0) return { text: "Chưa thấy dấu hiệu đáng lo", cls: "text-green font-semibold" };
-  return { text: "Chưa đủ thông tin", cls: "text-muted font-semibold" };
+  return { text: "Chưa đủ căn cứ để đưa ra kết quả", cls: "text-muted font-semibold" };
 }
 
 function formatDate(raw: string): string {
@@ -54,7 +55,7 @@ export default function HistoryPage() {
     getHistory()
       .then((d) => {
         if (!cancelled) {
-          setRows(d);
+          setRows(d.map(listedRow));
           setLoading(false);
         }
       })

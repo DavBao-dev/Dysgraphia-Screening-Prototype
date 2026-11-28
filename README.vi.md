@@ -85,14 +85,17 @@ Lỗi: `400` dữ liệu không hợp lệ (video không có bàn tay, thiếu f
 **Model A — chuyển động tay (bắt buộc).**
 video / landmark từ browser → MediaPipe Hands (21 điểm mỗi bàn tay) → `KinematicFeatureExtractor`
 (18 feature: tốc độ, gia tốc, jerk, pause ratio, tremor 3–8 Hz, pinch…) → **Random Forest**
-(`weights/writesense_model_a.joblib`, schema 18 feature) → `risk_score` + `prediction`.
+(`weights/writesense_model_a.joblib`, dùng 16 feature: bỏ `fps` và `num_frames`) → `risk_score` + `prediction`.
+- Model hiện tại được train bằng `train_model_a.py` trên 19 clip thật (13 đối chứng, 6 clip dys cắt từ
+  2 bản ghi `dysgraphia_V001`, `dysgraphia_V003`). Kiểm định chéo theo bản ghi chưa cho thấy model
+  phân biệt được hai nhóm (`model_a_cv_report.json`); cần thêm video của nhiều trẻ khác trước khi đánh giá.
 
 - Cần tối thiểu `MIN_MODEL_A_FRAMES = 5` frame có bàn tay (`backend/config.py`); frontend giữ
   cùng giá trị ở `frontend/lib/constants.ts` (`MIN_LIVE_FRAMES`).
 - Có "movement gate": bàn tay đứng yên hoặc co cứng → `risk_score = 0.0`,
   `status = "Hand Stationary / Contracted Pose"`, các feature trả về 0.
 - `EnhancedKinematicFeatureExtractor.extract_features()` vẫn yêu cầu `T >= 15` — chỉ ảnh hưởng
-  nếu bạn load model theo schema 28 feature; model hiện tại là 18 feature nên không đi nhánh này.
+  nếu bạn load model theo schema 28 feature; model hiện tại chỉ dùng feature cơ bản nên không đi nhánh này.
 
 **Model B — ảnh chữ viết tay (tuỳ chọn).**
 ảnh → `image_features.normalize_handwriting` (nhị phân hoá, mực đen trên nền trắng) →

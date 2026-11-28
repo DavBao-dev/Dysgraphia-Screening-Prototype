@@ -1,0 +1,224 @@
+{
+  "features": [
+    "speed_mean",
+    "speed_max",
+    "speed_std",
+    "acceleration_mean",
+    "acceleration_max",
+    "acceleration_std",
+    "jerk_mean",
+    "jerk_max",
+    "jerk_std",
+    "wrist_flexion_angle_mean",
+    "wrist_flexion_angle_std",
+    "in_air_pause_ratio",
+    "tremor_peak_frequency_hz",
+    "tremor_peak_amplitude",
+    "pinch_distance_std",
+    "pinch_distance_mean"
+  ],
+  "dropped": [
+    "num_frames",
+    "fps"
+  ],
+  "n_clips": 19,
+  "n_dys": 6,
+  "n_groups": 11,
+  "skipped": [],
+  "new_model_group_cv": {
+    "auc": 0.077,
+    "accuracy": 0.316,
+    "sensitivity": 0.0,
+    "specificity": 0.462,
+    "confusion_tn_fp_fn_tp": [
+      6,
+      7,
+      6,
+      0
+    ]
+  },
+  "old_model_same_clips": {
+    "auc": 0.551,
+    "accuracy": 0.632,
+    "sensitivity": 0.0,
+    "specificity": 0.923,
+    "confusion_tn_fp_fn_tp": [
+      12,
+      1,
+      6,
+      0
+    ]
+  },
+  "per_clip": [
+    {
+      "clip": "V001",
+      "label": 0,
+      "group": "V001",
+      "hand_frames": 645,
+      "p_new_cv": 0.625,
+      "p_old": 0.07
+    },
+    {
+      "clip": "V001_dys",
+      "label": 1,
+      "group": "dys_V001",
+      "hand_frames": 583,
+      "p_new_cv": 0.056,
+      "p_old": 0.305
+    },
+    {
+      "clip": "V002",
+      "label": 0,
+      "group": "V002",
+      "hand_frames": 114,
+      "p_new_cv": 0.341,
+      "p_old": 0.09
+    },
+    {
+      "clip": "V002_dys",
+      "label": 1,
+      "group": "dys_V001",
+      "hand_frames": 453,
+      "p_new_cv": 0.099,
+      "p_old": 0.2
+    },
+    {
+      "clip": "V003_1",
+      "label": 0,
+      "group": "V003",
+      "hand_frames": 807,
+      "p_new_cv": 0.399,
+      "p_old": 0.04
+    },
+    {
+      "clip": "V003_2",
+      "label": 0,
+      "group": "V003",
+      "hand_frames": 198,
+      "p_new_cv": 0.426,
+      "p_old": 0.05
+    },
+    {
+      "clip": "V003_3",
+      "label": 0,
+      "group": "V003",
+      "hand_frames": 319,
+      "p_new_cv": 0.424,
+      "p_old": 0.04
+    },
+    {
+      "clip": "V003_4",
+      "label": 0,
+      "group": "V003",
+      "hand_frames": 529,
+      "p_new_cv": 0.405,
+      "p_old": 0.03
+    },
+    {
+      "clip": "V003_5",
+      "label": 0,
+      "group": "V003",
+      "hand_frames": 362,
+      "p_new_cv": 0.49,
+      "p_old": 0.06
+    },
+    {
+      "clip": "V003_dys",
+      "label": 1,
+      "group": "dys_V001",
+      "hand_frames": 475,
+      "p_new_cv": 0.297,
+      "p_old": 0.173
+    },
+    {
+      "clip": "V004",
+      "label": 0,
+      "group": "V004",
+      "hand_frames": 1423,
+      "p_new_cv": 0.615,
+      "p_old": 0.315
+    },
+    {
+      "clip": "V004_dys",
+      "label": 1,
+      "group": "dys_V003",
+      "hand_frames": 290,
+      "p_new_cv": 0.429,
+      "p_old": 0.05
+    },
+    {
+      "clip": "V005",
+      "label": 0,
+      "group": "V005",
+      "hand_frames": 461,
+      "p_new_cv": 0.684,
+      "p_old": 0.09
+    },
+    {
+      "clip": "V005_dys",
+      "label": 1,
+      "group": "dys_V003",
+      "hand_frames": 110,
+      "p_new_cv": 0.261,
+      "p_old": 0.05
+    },
+    {
+      "clip": "V006",
+      "label": 0,
+      "group": "V006",
+      "hand_frames": 1049,
+      "p_new_cv": 0.846,
+      "p_old": 0.205
+    },
+    {
+      "clip": "V006_dys",
+      "label": 1,
+      "group": "dys_V003",
+      "hand_frames": 36,
+      "p_new_cv": 0.363,
+      "p_old": 0.079
+    },
+    {
+      "clip": "V007",
+      "label": 0,
+      "group": "V007",
+      "hand_frames": 860,
+      "p_new_cv": 0.576,
+      "p_old": 0.307
+    },
+    {
+      "clip": "V008",
+      "label": 0,
+      "group": "V008",
+      "hand_frames": 75,
+      "p_new_cv": 0.657,
+      "p_old": 0.05
+    },
+    {
+      "clip": "V009",
+      "label": 0,
+      "group": "V009",
+      "hand_frames": 158,
+      "p_new_cv": 0.609,
+      "p_old": 0.78
+    }
+  ],
+  "feature_importance": {
+    "jerk_max": 0.145,
+    "wrist_flexion_angle_mean": 0.12,
+    "acceleration_max": 0.099,
+    "speed_max": 0.086,
+    "acceleration_std": 0.076,
+    "tremor_peak_amplitude": 0.069,
+    "jerk_mean": 0.068,
+    "jerk_std": 0.066,
+    "speed_std": 0.053,
+    "pinch_distance_std": 0.05,
+    "acceleration_mean": 0.045,
+    "wrist_flexion_angle_std": 0.032,
+    "speed_mean": 0.032,
+    "pinch_distance_mean": 0.03,
+    "tremor_peak_frequency_hz": 0.027,
+    "in_air_pause_ratio": 0.0
+  }
+}

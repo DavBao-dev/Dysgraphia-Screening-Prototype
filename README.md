@@ -140,7 +140,7 @@ Docker Spaces need a paid Hugging Face plan, so the same image can also run on a
 
 - After a page reload, the results page cannot yet show Model A's probability or video-quality details again, because they are not stored.
 - Model B was trained and evaluated only on Malay handwriting. It has not yet been tested on Vietnamese handwriting or on photos of real notebook pages.
-- The training code for Model A is not included in this repository. Model A was trained on synthetic kinematic features, and the available real videos are only enough to check that the pipeline runs, not to measure accuracy.
+- Model A is trained by `train_model_a.py` on 19 real clips (13 control, 6 dysgraphia clips cut from only 2 recordings), using 16 kinematic features without `fps` and `num_frames`. Cross-validation by recording has not shown that it separates the two groups (`model_a_cv_report.json`), so videos from more children are needed before its accuracy can be measured.
 
 ## Team
 

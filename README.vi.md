@@ -194,3 +194,9 @@ cd frontend && npm run dev               # cửa sổ 2 → http://localhost:300
 ## Xác nhận điều khoản xử lý dữ liệu
 
 Trang `/terms` và nút xác nhận trước khi mở camera/tải dữ liệu đã được bổ sung. Bản thu thật mặc định bị khóa cho đến khi cấu hình máy chủ và kiểm soát truy cập. Xem [hướng dẫn triển khai](docs/WEB_DATA_TERMS.md).
+
+## Chụp ảnh chữ viết trực tiếp
+
+Trong bước **Ảnh chụp trang vở**, chọn **Chụp bằng camera máy này** → **Mở camera chụp ảnh** → **Chụp ảnh**. Xem lại ảnh, dùng **Xoay trái 90°** hoặc **Xoay phải 90°** để đưa chữ về đúng chiều, rồi bấm **Dùng ảnh này**. Có thể **Chụp lại** hoặc chuyển về **Tải ảnh đã chụp**.
+
+Camera cần HTTPS hoặc localhost và quyền camera của trình duyệt. Không thu âm, không lật gương chữ viết; camera được tắt sau khi chụp, khi đóng hoặc rời chế độ. Xoay ảnh thay đổi điểm ảnh của tệp JPEG gửi phân tích, không chỉ xoay phần xem trước. Ảnh chỉ được gửi cùng dữ liệu khi bấm **Xem kết quả**.

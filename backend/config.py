@@ -16,6 +16,8 @@ USE_MODEL_B_SCALER = True
 # Ban deploy (deploy/huggingface/Dockerfile) dat bien moi truong nay thap hon de may chu nho khong bi qua tai.
 MAX_VIDEO_SIZE_MB = int(os.environ.get("MAX_VIDEO_SIZE_MB", "4096"))
 MAX_VIDEO_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024
+# Chuoi ket noi Postgres (vd. Supabase, dung "Session pooler" de co IPv4). De trong -> luu CSV trong data/.
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
 MIN_MODEL_A_FRAMES = 5
 MODEL_A_VIDEO_EXTS = {".mp4", ".mov", ".avi", ".mpeg4", ".mkv"}
 MODEL_B_IMAGE_EXTS = {".png", ".jpg", ".jpeg"}

@@ -9,15 +9,23 @@ Moi "bang" cua MySQL cu duoc thay bang 1 file CSV trong thu muc data/:
     data/predictions.csv        - prediction_id, session_id, model_a_output, model_b_output, final_output, ensemble_method, predicted_at
 
 Giu nguyen ten ham + signature nhu ban MySQL de backend FastAPI khong phai sua.
+
+Neu dat bien moi truong DATABASE_URL (Postgres, vd. Supabase), 4 "bang" tren duoc luu vao schema
+"dysscan" cua database do thay vi CSV: cung ten cot, gia tri luu dang text giong het cell CSV, nen
+phan doc ben duoi khong doi. Bat Row Level Security de API cong khai cua Supabase khong doc duoc.
+Chep du lieu CSV cu len database:  python -m backend.db import-csv
 """
 import csv
 import json
 import os
+import sys
 import threading
 import uuid
 from datetime import datetime
 
-from backend.config import DATA_DIR
+from backend.config import DATA_DIR, DATABASE_URL
+
+_SCHEMA = "dysscan"
 
 # Lock de ghi file an toan khi backend FastAPI xu ly nhieu request cung luc
 _LOCK = threading.Lock()
@@ -42,8 +50,72 @@ _FILES = {
 }
 
 
+def _cell(value) -> str:
+    """Gia tri nhu csv.writer ghi ra: None -> "", con lai -> str()."""
+    return "" if value is None else str(value)
+
+
+# ------------------------------------------------------------------ Postgres (khi co DATABASE_URL)
+_PG_READY = set()
+
+
+def _pg_connect():
+    import psycopg
+
+    # prepare_threshold=None: khong dung prepared statement, chay duoc qua pooler cua Supabase.
+    return psycopg.connect(DATABASE_URL, autocommit=True, prepare_threshold=None)
+
+
+def _pg_table(name: str):
+    from psycopg import sql
+
+    return sql.Identifier(_SCHEMA, name)
+
+
+def _pg_ensure_table(name: str) -> None:
+    if name in _PG_READY:
+        return
+    from psycopg import sql
+
+    cols = sql.SQL(", ").join(sql.SQL("{} text NOT NULL DEFAULT ''").format(sql.Identifier(f)) for f in _FILES[name]["fields"])
+    with _pg_connect() as conn:
+        conn.execute(sql.SQL("CREATE SCHEMA IF NOT EXISTS {}").format(sql.Identifier(_SCHEMA)))
+        # _row giu thu tu ghi, giong thu tu dong trong file CSV.
+        conn.execute(sql.SQL("CREATE TABLE IF NOT EXISTS {} (_row bigserial PRIMARY KEY, {})").format(_pg_table(name), cols))
+        conn.execute(sql.SQL("ALTER TABLE {} ENABLE ROW LEVEL SECURITY").format(_pg_table(name)))
+    _PG_READY.add(name)
+
+
+def _pg_append_row(name: str, values: dict) -> None:
+    from psycopg import sql
+
+    _pg_ensure_table(name)
+    fields = _FILES[name]["fields"]
+    query = sql.SQL("INSERT INTO {} ({}) VALUES ({})").format(
+        _pg_table(name),
+        sql.SQL(", ").join(map(sql.Identifier, fields)),
+        sql.SQL(", ").join(sql.Placeholder() * len(fields)),
+    )
+    with _pg_connect() as conn:
+        conn.execute(query, [_cell(values.get(f)) for f in fields])
+
+
+def _pg_read_rows(name: str) -> list:
+    from psycopg import sql
+    from psycopg.rows import dict_row
+
+    _pg_ensure_table(name)
+    fields = _FILES[name]["fields"]
+    query = sql.SQL("SELECT {} FROM {} ORDER BY _row").format(sql.SQL(", ").join(map(sql.Identifier, fields)), _pg_table(name))
+    with _pg_connect() as conn:
+        return conn.cursor(row_factory=dict_row).execute(query).fetchall()
+
+
+# ------------------------------------------------------------------ CSV (mac dinh)
 def _ensure_table(name: str) -> None:
     """Tao file CSV + dong header neu file chua ton tai."""
+    if DATABASE_URL:
+        return _pg_ensure_table(name)
     spec = _FILES[name]
     os.makedirs(DATA_DIR, exist_ok=True)
     if not os.path.exists(spec["path"]):
@@ -53,6 +125,8 @@ def _ensure_table(name: str) -> None:
 
 def _append_row(name: str, values: dict) -> None:
     """Ghi them 1 dong moi vao cuoi file CSV (thread-safe)."""
+    if DATABASE_URL:
+        return _pg_append_row(name, values)
     spec = _FILES[name]
     _ensure_table(name)
     row = [values.get(field, "") for field in spec["fields"]]
@@ -63,10 +137,31 @@ def _append_row(name: str, values: dict) -> None:
 
 def _read_rows(name: str) -> list:
     """Doc toan bo cac dong cua 1 file CSV (tru header)."""
+    if DATABASE_URL:
+        return _pg_read_rows(name)
     spec = _FILES[name]
     _ensure_table(name)
     with open(spec["path"], "r", newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
+
+
+def import_csv(data_dir=DATA_DIR) -> dict:
+    """Chep cac dong trong file CSV cu len database (bo qua dong co id da ton tai). Tra ve so dong da chep."""
+    if not DATABASE_URL:
+        raise RuntimeError("Chua dat DATABASE_URL.")
+    copied = {}
+    for name, spec in _FILES.items():
+        path = os.path.join(data_dir, os.path.basename(spec["path"]))
+        if not os.path.exists(path):
+            continue
+        id_field = spec["fields"][0]
+        existing = {r[id_field] for r in _pg_read_rows(name)}
+        with open(path, "r", newline="", encoding="utf-8") as f:
+            rows = [r for r in csv.DictReader(f) if r.get(id_field) not in existing]
+        for r in rows:
+            _pg_append_row(name, r)
+        copied[name] = len(rows)
+    return copied
 
 
 def init_db() -> None:
@@ -209,3 +304,10 @@ def get_session(session_id: str) -> dict | None:
             "predicted_at": p.get("predicted_at", "") if p else "",
         },
     }
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] == ["import-csv"]:
+        print(import_csv())
+    else:
+        print("Dung: python -m backend.db import-csv")

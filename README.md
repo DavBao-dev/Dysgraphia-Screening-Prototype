@@ -130,10 +130,14 @@ Docker Spaces need a paid Hugging Face plan, so the same image can also run on a
 
    The script installs Docker, opens ports 80/443 in the VM firewall, clones the repository, builds the image and prints the HTTPS address. Run it again to deploy the latest `main`.
 
+### Storing sessions in Postgres (Supabase)
+
+By default sessions are saved as CSV files in `data/`. Set `DATABASE_URL` to a Postgres connection string and the backend stores the same four tables in a `dysscan` schema of that database instead, with Row Level Security turned on so Supabase's public API cannot read them. With Supabase, use the **Session pooler** connection string (Connect → Session pooler), because the direct connection is IPv6 only. On the VM, add `DATABASE_URL=...` to `deploy/oracle/.env`. To copy existing CSV sessions into the database once: `docker compose run --rm app python -m backend.db import-csv`.
+
 ## Privacy and responsible use
 
 - The app is meant to be used with the consent of the child's parent or guardian.
-- Screening sessions are stored only on the machine running the backend, in `data/`. This folder is excluded from Git.
+- Screening sessions are stored on the machine running the backend, in `data/` (excluded from Git), or in the Postgres database named by `DATABASE_URL`. Only results and computed features are stored, never the videos or photos.
 - The results are probabilistic. A high risk score should lead to a referral to a specialist, not a label.
 
 ## Known limitations

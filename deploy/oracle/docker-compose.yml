@@ -10,6 +10,9 @@ services:
         REPO_REF: ${REPO_REF:-main}
         MAX_VIDEO_MB: ${MAX_VIDEO_MB:-200}
     restart: unless-stopped
+    environment:
+      # Postgres/Supabase connection string; empty keeps sessions as CSV files in the app-data volume.
+      DATABASE_URL: ${DATABASE_URL:-}
     volumes:
       - app-data:/app/data
     expose:

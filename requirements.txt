@@ -12,4 +12,5 @@ fastapi>=0.110
 uvicorn>=0.29
 python-multipart>=0.0.9
 onnxruntime>=1.18
+psycopg[binary]>=3.1  # chi dung khi dat DATABASE_URL (Postgres/Supabase)
 # openvino>=2024.0  # tÃ¹y chá»n tÄƒng tá»‘c; khÃ´ng báº¯t buá»™c

@@ -18,6 +18,7 @@ def history_detail(session_id: str):
     if d is None:
         raise HTTPException(status_code=404, detail="Không tìm thấy phiên.")
     a, b, p = d["model_a"], d["model_b"], d["prediction"]
+    meta = a["meta"] or {}
     return {
         "session_id": session_id,
         "patient_id": d["patient_id"],
@@ -25,9 +26,9 @@ def history_detail(session_id: str):
         "model_a": {
             "available": True,
             "prediction": a["output"],
-            "score": None,
-            "status": None,
-            "quality": None,
+            "score": meta.get("score"),
+            "status": meta.get("status"),
+            "quality": meta.get("quality"),
             "features": a["features_json"] or {},
         },
         "model_b": {

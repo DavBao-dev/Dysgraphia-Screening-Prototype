@@ -65,7 +65,8 @@ def run_screening(
 
     session_id = db.new_session(patient_id)
     db.save_model_a(session_id, model_a["features"], model_a["prediction"],
-                    note="Model A: Random Forest (writesense)")
+                    note="Model A: Random Forest (writesense)",
+                    meta={"score": model_a["score"], "status": model_a["status"], "quality": model_a["quality"]})
     if model_b is not None:
         feats = model_b_service.last_features()
         db.save_model_b(session_id, feats["ink_thickness_mean"], feats["baseline_deviation"],

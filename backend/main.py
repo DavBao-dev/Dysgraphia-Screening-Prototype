@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from backend.routes import history, screening
+from backend import consent
 
 
 def _configure_diagnostic_logging() -> None:
@@ -33,6 +34,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(consent.router)
 app.include_router(screening.router)
 app.include_router(history.router)
 

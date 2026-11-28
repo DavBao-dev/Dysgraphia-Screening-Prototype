@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import ConsentGate from "@/components/ConsentGate";
+import type { ConsentReceipt } from "@/lib/consent";
+
 import StudentInput from "@/components/StudentInput";
 import StepCard from "@/components/StepCard";
 import TipList from "@/components/TipList";
@@ -29,6 +32,7 @@ const IMAGE_TIPS = [
 
 export default function ScreeningPage() {
   const router = useRouter();
+  const [consent, setConsent] = useState<ConsentReceipt | null>(null);
   const [patientId, setPatientId] = useState("");
   const [mode, setMode] = useState<"video" | "live">("video");
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -81,7 +85,7 @@ export default function ScreeningPage() {
   }
 
   async function handleRun() {
-    if (loading || !hasModelA) return;
+    if (loading || !hasModelA || !consent) return;
     setLoading(true);
     setError(null);
 
@@ -99,7 +103,7 @@ export default function ScreeningPage() {
     if (imageFile) form.append("image", imageFile);
 
     try {
-      const result = await runScreening(form);
+      const result = await runScreening(form, consent.token);
       router.push(`/results/${result.session_id}`);
     } catch (e) {
       setLoading(false);
@@ -107,8 +111,13 @@ export default function ScreeningPage() {
     }
   }
 
+  if (!consent) return <ConsentGate onConfirm={setConsent} />;
+
   return (
     <div className="mx-auto w-full max-w-5xl px-4 pb-4 pt-8 sm:px-6 sm:pt-12">
+      <p className="mb-5 break-all text-sm leading-6 text-muted">
+        Đã ghi nhận xác nhận. Mã để liên hệ về dữ liệu: <span className="font-medium">{consent.receipt_id}</span>.
+      </p>
       <h1 className="font-serif text-[2rem] font-semibold leading-tight text-text sm:text-[2.4rem]">
         Kiểm tra cho một em
       </h1>

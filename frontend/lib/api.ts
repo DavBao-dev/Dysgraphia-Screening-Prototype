@@ -29,8 +29,8 @@ async function j<T>(res: Promise<Response>): Promise<T> {
   return r.json() as Promise<T>;
 }
 
-export function runScreening(form: FormData): Promise<ScreeningResponse> {
-  return j(fetch("/api/screening", { method: "POST", body: form }));
+export function runScreening(form: FormData, consentToken: string): Promise<ScreeningResponse> {
+  return j(fetch("/api/screening", { method: "POST", body: form, headers: { "X-Consent-Token": consentToken } }));
 }
 export function getHistory(): Promise<HistoryRow[]> {
   return j(fetch("/api/history"));

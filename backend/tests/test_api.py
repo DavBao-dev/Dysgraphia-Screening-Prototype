@@ -1,5 +1,6 @@
 # backend/tests/test_api.py
 import io
+import pytest
 import json
 
 import numpy as np
@@ -10,6 +11,16 @@ from backend.main import app
 from backend.config import MAX_VIDEO_SIZE_MB
 
 client = TestClient(app)
+
+@pytest.fixture(autouse=True)
+def verified_consent_for_model_tests(monkeypatch):
+    from backend.consent import require_consent
+    import backend.routes.screening as screening
+    app.dependency_overrides[require_consent] = lambda: "test-receipt"
+    monkeypatch.setattr(screening, "link_session", lambda *_: None)
+    yield
+    app.dependency_overrides.pop(require_consent, None)
+
 
 
 def _landmarks_json() -> str:

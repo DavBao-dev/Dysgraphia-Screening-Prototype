@@ -2,9 +2,10 @@
 import json
 from typing import Optional
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 import backend.db as db
+from backend.consent import require_consent, link_session
 from backend import schemas
 from backend.config import DISCLAIMER, MAX_VIDEO_BYTES, MODEL_A_VIDEO_EXTS, MODEL_B_IMAGE_EXTS
 from backend.services import ensemble_service, model_a_service, model_b_service
@@ -31,6 +32,7 @@ def _run_model_a_video(video: UploadFile) -> dict:
 
 @router.post("/screening", response_model=schemas.ScreeningResponse)
 def run_screening(
+    consent_id: str = Depends(require_consent),
     patient_id: str = Form("patient_001"),
     model_a_source: str = Form("video"),
     video: Optional[UploadFile] = File(None),
@@ -64,6 +66,7 @@ def run_screening(
     ensemble = ensemble_service.combine(model_a, model_b)
 
     session_id = db.new_session(patient_id)
+    link_session(consent_id, session_id)
     db.save_model_a(session_id, model_a["features"], model_a["prediction"],
                     note="Model A: Random Forest (writesense)",
                     meta={"score": model_a["score"], "status": model_a["status"], "quality": model_a["quality"]})
@@ -87,6 +90,7 @@ def run_screening(
 
 @router.post("/screening/model-a", response_model=schemas.ModelAResult)
 def run_model_a_only(
+    consent_id: str = Depends(require_consent),
     model_a_source: str = Form("video"),
     video: Optional[UploadFile] = File(None),
     landmarks_json: Optional[str] = Form(None),
@@ -104,7 +108,7 @@ def run_model_a_only(
 
 
 @router.post("/screening/model-b", response_model=schemas.ModelBResult)
-def run_model_b_only(image: UploadFile = File(...)):
+def run_model_b_only(image: UploadFile = File(...), consent_id: str = Depends(require_consent)):
     if _ext(image.filename) not in MODEL_B_IMAGE_EXTS:
         raise ValueError("Cần upload ảnh PNG/JPG/JPEG cho Model B.")
     return model_b_service.run_model_b_image(image.file.read())

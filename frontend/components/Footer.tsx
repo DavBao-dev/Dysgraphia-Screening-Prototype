@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer() {
   return (
     <footer className="mt-16 border-t border-border print:mt-6">
@@ -6,6 +8,7 @@ export default function Footer() {
           Công cụ này chỉ gợi ý những em nên được quan sát thêm. Nó không chẩn đoán khó viết. Nếu bạn lo lắng về việc viết
           của trẻ, hãy trao đổi với giáo viên hoặc chuyên gia.
         </p>
+        <Link href="/terms" className="mt-3 inline-block underline underline-offset-4">Điều khoản xử lý dữ liệu cá nhân</Link>
       </div>
     </footer>
   );

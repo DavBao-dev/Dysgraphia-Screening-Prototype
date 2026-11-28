@@ -189,3 +189,8 @@ cd frontend && npm run dev               # cửa sổ 2 → http://localhost:300
   `db.save_model_a()` chỉ lưu `features_json` + `model_a_output`, nên **xác suất (`score`), `status`
   và `quality` (fps/frames/duration) của Model A hiện không hiển thị lại được sau khi tải lại trang**.
 
+
+
+## Xác nhận điều khoản xử lý dữ liệu
+
+Trang `/terms` và nút xác nhận trước khi mở camera/tải dữ liệu đã được bổ sung. Bản thu thật mặc định bị khóa cho đến khi cấu hình máy chủ và kiểm soát truy cập. Xem [hướng dẫn triển khai](docs/WEB_DATA_TERMS.md).
